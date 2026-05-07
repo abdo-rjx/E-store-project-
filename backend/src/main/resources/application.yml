@@ -1,0 +1,43 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: estore-backend
+
+  datasource:
+    url: jdbc:h2:mem:estore
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/estore
+
+  sql:
+    init:
+      mode: always
+
+jwt:
+  secret: ${JWT_SECRET:4f6e63652075706f6e20612074696d6520696e20612067616c617879206661722c20666172206177617920746869732073746f7279206973206e6f74207265616c}
+  expiration: 86400000
+
+logging:
+  level:
+    com.estore: INFO
+    org.springframework.security: WARN

@@ -1,0 +1,55 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.orig
+*.iml
+*.iws
+*.ipr
+.mvn/
+.idea/
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+application-local.yml
+application-local.properties
+
+# H2 Database
+*.db
+*.h2.db
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Angular
+frontend/.vscode/
+frontend/.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.vs/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# MongoDB
+mongodb-data/
