@@ -111,6 +111,7 @@ Shopping Domain          Billing Domain          Review Domain (MongoDB)
 | TypeScript | 5.6.x | Type Safety |
 | RxJS | 7.8.x | Reactive Programming |
 | Node.js | 20.x LTS | Runtime |
+| Swiper.js | latest | Carousel/Slider functionality |
 
 ### Testing
 | Technology | Scope | Files |
@@ -136,3 +137,28 @@ Shopping Domain          Billing Domain          Review Domain (MongoDB)
 | Shopping | Cart operations | Cart, CartItem |
 | Billing | Order processing, history | Order, OrderItem |
 | Review | Product reviews (MongoDB) | ProductReview |
+
+### New Components (Latest Update)
+| Component/Service | Location | Purpose |
+|---|---|---|
+| `FileStorageService` | `backend/shared/storage/` | Handle file uploads (video + images) with validation |
+| `WebMvcConfig` | `backend/shared/config/` | Serve uploaded files via `/uploads/**` |
+| `HomeComponent` | `frontend/features/home/` | Landing page with video slider for latest 3 products |
+| `HeroComponent` | `frontend/shared/components/hero/` | Full-screen hero with scroll-driven animations |
+| `StickySectionComponent` | `frontend/shared/components/sticky-section/` | Apple-style sticky visual sections |
+| `ProductShowcaseComponent` | `frontend/shared/components/product-showcase/` | Featured products grid with reveal animations |
+| `ScrollAnimationService` | `frontend/shared/animations/` | Global scroll progress tracking + IntersectionObserver |
+| `ScrollRevealDirective` | `frontend/shared/animations/` | `appScrollReveal` directive for fade-up/scale/slide animations |
+
+### Product Entity Updates
+| Field | Type | Description |
+|---|---|---|
+| `videoPath` | String (nullable) | Path to promotional video (e.g., `/uploads/videos/abc.mp4`) |
+| `imagePaths` | List\<String\> | Multiple image paths (1-5 images) |
+| `createdAt` | LocalDateTime | Auto-set timestamp for sorting latest products |
+
+### New API Endpoints
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/products/latest` | Get latest 3 products (for video slider) |
+| POST | `/api/admin/products/upload` | Create product with video + images (multipart) |

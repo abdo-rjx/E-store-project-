@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -41,7 +42,7 @@ public class BillingService {
         this.productRepository = productRepository;
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public OrderDto placeOrder(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
@@ -52,6 +53,7 @@ public class BillingService {
             throw new IllegalArgumentException("Cannot place order with empty cart");
         }
 
+        // Validate stock first
         for (CartItemDto item : cart.items()) {
             if (!inventoryService.hasStock(item.productId(), item.quantity())) {
                 throw new IllegalArgumentException("Insufficient stock for: " + item.productName());
@@ -63,6 +65,7 @@ public class BillingService {
                 .orderDate(LocalDateTime.now())
                 .totalAmount(cart.total())
                 .status("CONFIRMED")
+                .items(new ArrayList<>())
                 .build();
 
         for (CartItemDto item : cart.items()) {

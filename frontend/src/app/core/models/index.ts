@@ -7,6 +7,9 @@ export interface Product {
   categoryName: string;
   categoryId: number;
   stock: number;
+  videoPath?: string;
+  imagePaths?: string[];
+  createdAt?: string;
 }
 
 export interface Category {

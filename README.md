@@ -51,9 +51,9 @@ mvn spring-boot:run
 #   Password: (leave empty)
 ```
 
-> **JWT Secret**: By default, a development secret is embedded in `application.yml`.
-> For production, set the `JWT_SECRET` environment variable with a 64+ character hex string.
+> **JWT Secret**: For production, set the `JWT_SECRET` environment variable with a 64+ character hex string.
 > Example: `export JWT_SECRET=$(openssl rand -hex 32)`
+> **Note**: No default secret is provided - you MUST set this variable for the application to start.
 
 ### 3. Run Frontend
 
@@ -75,7 +75,7 @@ The backend initializes demo data automatically on startup:
 
 | Email | Password | Role |
 |---|---|---|
-| admin@estore.com | user123 | ADMIN |
+| admin@estore.com | admin123 | ADMIN |
 | omar@test.com | user123 | USER |
 | fatima@test.com | user123 | USER |
 
@@ -115,6 +115,8 @@ The backend initializes demo data automatically on startup:
 ### Admin Domain
 - Product CRUD operations
 - Stock management
+- **File upload**: Product video (MP4/WebM, max 50MB) + images (JPG/PNG/GIF/WebP, max 5MB each, 1-5 images)
+- Drag & drop support with live previews in admin dialog
 
 ## API Endpoints
 
@@ -131,6 +133,7 @@ The backend initializes demo data automatically on startup:
 | GET | /api/products/{id} | Get product detail |
 | GET | /api/products/search?keyword=&categoryId= | Search/filter |
 | GET | /api/products/page?page=0&size=12 | Paginated products (with optional keyword/categoryId) |
+| GET | /api/products/latest | Get latest 3 products (for video slider) |
 | GET | /api/categories | List categories |
 
 ### Cart (Authenticated)
@@ -151,16 +154,24 @@ The backend initializes demo data automatically on startup:
 ### Reviews
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | /api/reviews/product/{productId} | Get product reviews |
-| POST | /api/reviews | Create review |
+| GET | /api/reviews/product/{productId}?page=0&size=10 | Get product reviews (paginated) |
+| POST | /api/reviews | Create review (prevents duplicates) |
 
 ### Admin (Admin only)
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | /api/admin/products | Create product |
+| POST | /api/admin/products | Create product (JSON body) |
 | PUT | /api/admin/products/{id} | Update product |
 | DELETE | /api/admin/products/{id} | Delete product |
 | PUT | /api/admin/inventory/{productId}?quantity= | Update stock |
+| POST | /api/admin/products/upload | Create product with video + images (multipart/form-data) |
+
+#### File Upload Details
+- **Video**: Single file, MP4/WebM/OGG format, max 50MB
+- **Images**: 1-5 files, JPG/PNG/GIF/WebP format, max 5MB each
+- **Storage**: Files saved to `uploads/videos/` and `uploads/images/`
+- **Access**: Served statically at `/uploads/**` (e.g., `http://localhost:8080/uploads/videos/abc123.mp4`)
+- The upload endpoint returns the created product with `videoPath` and `imagePaths` populated
 
 ## Architecture
 
@@ -173,10 +184,17 @@ The backend initializes demo data automatically on startup:
 - **Security**: JWT-based stateless authentication with Spring Security
 
 ### Frontend (Angular)
-- **Feature-based structure**: auth, catalog, cart, orders, profile, admin
+- **Feature-based structure**: auth, catalog, cart, orders, profile, admin, home
 - **Core services**: API service, Auth service, JWT interceptor
 - **UI**: Angular Material components
 - **Routing**: Lazy-loaded feature modules with auth guards
+- **Libraries**: Swiper.js for carousel/slider functionality
+- **Features**:
+  - Video slider on home page (autoplay, loop, muted)
+  - Image gallery with thumbnails on product detail
+  - File upload with drag & drop + live previews in admin
+  - Scroll-driven animations (fade-up, scale-up, slide-left/right)
+  - Responsive full-screen design with light/dark themes
 
 ## Configuration
 
@@ -191,11 +209,29 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/estore
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
 
 jwt:
-  secret: <your-secret-key>
+  secret: ${JWT_SECRET:}
   expiration: 86400000  # 24 hours
 ```
+
+> **Important**: You MUST set the `JWT_SECRET` environment variable before running in production. There is no default value.
+
+### File Upload Storage
+- Uploaded files are stored in the `uploads/` directory at the project root
+- Structure:
+  ```
+  uploads/
+  ├── images/    # Product images (JPG, PNG, GIF, WebP)
+  └── videos/    # Product videos (MP4, WebM, OGG)
+  ```
+- Files are served statically via `/uploads/**` endpoint
+- Add `uploads/` to `.gitignore` to prevent committing media files
+- **Important**: The `uploads/` directory is created automatically on first backend startup
 
 ### Frontend (environment.ts)
 ```typescript
@@ -240,3 +276,9 @@ Tests use JUnit 5 + Mockito. Key scenarios covered:
 - **Pagination**: page size, total count, filtering
 - **Cart**: add/update/remove items, stock validation, total calculation
 - **Orders**: empty cart rejection, stock check, order creation, history
+
+## New Dependencies
+
+| Library | Version | Purpose |
+|---|---|---|
+| swiper | latest | Video/image carousel on home page |

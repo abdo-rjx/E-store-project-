@@ -1,12 +1,6 @@
 import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../core/services/api.service';
@@ -15,65 +9,212 @@ import { Product } from '../../core/models';
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatCardModule, MatTableModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule],
   template: `
-    <h1>Admin Panel - Manage Products</h1>
-
-    <mat-card>
-      <mat-card-header>
-        <mat-card-title>Products</mat-card-title>
-        <button mat-raised-button color="primary" (click)="openAddDialog()">
-          <mat-icon>add</mat-icon> Add Product
+    <div class="admin-page">
+      <div class="admin-header">
+        <div class="admin-header-left">
+          <h1>Product Management</h1>
+          <p class="admin-subtitle">Create, update, and manage your product catalog.</p>
+        </div>
+        <button class="es-btn es-btn-primary" (click)="openAddDialog()">
+          <span class="material-icons">add</span>
+          Add Product
         </button>
-      </mat-card-header>
-      <mat-card-content>
-        <table mat-table [dataSource]="products" class="full-width-table">
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef> Name </th>
-            <td mat-cell *matCellDef="let p"> {{ p.name }} </td>
-          </ng-container>
+      </div>
 
-          <ng-container matColumnDef="category">
-            <th mat-header-cell *matHeaderCellDef> Category </th>
-            <td mat-cell *matCellDef="let p"> {{ p.categoryName }} </td>
-          </ng-container>
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="material-icons stat-icon">inventory_2</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ products.length }}</span>
+            <span class="stat-label">Total Products</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="material-icons stat-icon">check_circle</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ inStockCount }}</span>
+            <span class="stat-label">In Stock</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="material-icons stat-icon">warning</span>
+          <div class="stat-info">
+            <span class="stat-value">{{ outOfStockCount }}</span>
+            <span class="stat-label">Out of Stock</span>
+          </div>
+        </div>
+      </div>
 
-          <ng-container matColumnDef="price">
-            <th mat-header-cell *matHeaderCellDef> Price </th>
-            <td mat-cell *matCellDef="let p"> {{ '$' + (p.price | number:'1.2-2') }} </td>
-          </ng-container>
-
-          <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef> Stock </th>
-            <td mat-cell *matCellDef="let p"> {{ p.stock }} </td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef> Actions </th>
-            <td mat-cell *matCellDef="let p">
-              <button mat-icon-button (click)="openEditDialog(p)">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button mat-icon-button color="warn" (click)="deleteProduct(p)">
-                <mat-icon>delete</mat-icon>
-              </button>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
-      </mat-card-content>
-    </mat-card>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th class="text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (p of products; track p.id) {
+                <tr>
+                  <td>
+                    <div class="product-cell">
+                      <img [src]="p.imageUrl" [alt]="p.name" class="table-img"
+                           onerror="this.src='https://placehold.co/40x40/1a1a2e/7C6FF7?text=E'">
+                      <div class="product-cell-info">
+                        <span class="product-cell-name">{{ p.name }}</span>
+                        <span class="product-cell-id">ID: {{ p.id }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="category-pill">{{ p.categoryName }}</span>
+                  </td>
+                  <td class="price-cell">\${{ p.price | number:'1.2-2' }}</td>
+                  <td>
+                    <span class="stock-indicator" [class.low]="p.stock <= 5 && p.stock > 0"
+                          [class.out]="p.stock === 0">
+                      {{ p.stock }}
+                    </span>
+                  </td>
+                  <td class="text-right">
+                    <div class="action-btns">
+                      <button class="es-btn-icon" (click)="openEditDialog(p)" title="Edit">
+                        <span class="material-icons">edit</span>
+                      </button>
+                      <button class="es-btn-icon delete-icon" (click)="deleteProduct(p)" title="Delete">
+                        <span class="material-icons">delete_outline</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   `,
   styles: [`
-    .full-width-table { width: 100%; }
-    mat-card-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+    .admin-page { padding: 20px 0; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .admin-header h1 { font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 800; letter-spacing: -0.03em; }
+    .admin-subtitle { color: var(--text-secondary); font-size: 15px; margin-top: 6px; }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+    .stat-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-lg);
+    }
+    .stat-icon {
+      font-size: 28px;
+      color: var(--accent-primary);
+      padding: 12px;
+      background: var(--accent-primary-glow);
+      border-radius: var(--radius-md);
+    }
+    .stat-info { display: flex; flex-direction: column; }
+    .stat-value { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; }
+    .stat-label { font-size: 12px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+    .table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; }
+    .admin-table th {
+      padding: 14px 24px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-primary);
+    }
+    .admin-table td {
+      padding: 16px 24px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-primary);
+      vertical-align: middle;
+    }
+    .admin-table tr:last-child td { border-bottom: none; }
+    .admin-table tr:hover td { background: var(--bg-card-hover); }
+    .product-cell { display: flex; align-items: center; gap: 12px; }
+    .table-img {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+      background: var(--bg-secondary);
+    }
+    .product-cell-info { display: flex; flex-direction: column; }
+    .product-cell-name { font-weight: 600; color: var(--text-primary); }
+    .product-cell-id { font-size: 11px; color: var(--text-tertiary); }
+    .category-pill {
+      padding: 4px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .price-cell { font-weight: 600; color: var(--text-primary); }
+    .stock-indicator {
+      display: inline-flex;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 700;
+      background: var(--success-bg);
+      color: var(--success);
+    }
+    .stock-indicator.low { background: var(--warning-bg); color: var(--warning); }
+    .stock-indicator.out { background: var(--danger-bg); color: var(--danger); }
+    .text-right { text-align: right; }
+    .action-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .delete-icon:hover {
+      color: var(--danger) !important;
+      background: var(--danger-bg) !important;
+      border-color: var(--danger) !important;
+    }
   `]
 })
 export class AdminComponent implements OnInit {
   products: Product[] = [];
-  displayedColumns = ['name', 'category', 'price', 'stock', 'actions'];
+
+  get inStockCount(): number {
+    return this.products.filter(p => p.stock > 0).length;
+  }
+
+  get outOfStockCount(): number {
+    return this.products.filter(p => p.stock === 0).length;
+  }
 
   constructor(
     private api: ApiService,
@@ -93,8 +234,9 @@ export class AdminComponent implements OnInit {
 
   openAddDialog(): void {
     const dialogRef = this.dialog.open(ProductFormDialogComponent, {
-      width: '500px',
-      data: { product: { name: '', price: 0, stock: 0, categoryId: 1 } }
+      width: '640px',
+      maxWidth: '95vw',
+      data: { product: { name: '', price: 0, stock: 0, categoryId: 1, description: '', imageUrl: '' } }
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
@@ -102,6 +244,9 @@ export class AdminComponent implements OnInit {
           next: () => {
             this.snackBar.open('Product created', 'Close', { duration: 3000 });
             this.loadProducts();
+          },
+          error: (err) => {
+            this.snackBar.open(err.error?.message || 'Failed to create product', 'Close', { duration: 5000 });
           }
         });
       }
@@ -110,17 +255,13 @@ export class AdminComponent implements OnInit {
 
   openEditDialog(product: Product): void {
     const dialogRef = this.dialog.open(ProductFormDialogComponent, {
-      width: '500px',
+      width: '640px',
+      maxWidth: '95vw',
       data: { product: { ...product } }
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.api.updateProduct(product.id, result).subscribe({
-          next: () => {
-            this.snackBar.open('Product updated', 'Close', { duration: 3000 });
-            this.loadProducts();
-          }
-        });
+        this.loadProducts();
       }
     });
   }
@@ -131,6 +272,9 @@ export class AdminComponent implements OnInit {
         next: () => {
           this.snackBar.open('Product deleted', 'Close', { duration: 3000 });
           this.loadProducts();
+        },
+        error: (err) => {
+          this.snackBar.open(err.error?.message || 'Failed to delete product', 'Close', { duration: 5000 });
         }
       });
     }
@@ -140,52 +284,457 @@ export class AdminComponent implements OnInit {
 @Component({
   selector: 'app-product-form-dialog',
   template: `
-    <h2 mat-dialog-title>{{ isEdit ? 'Edit Product' : 'Add Product' }}</h2>
-    <mat-dialog-content>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Name</mat-label>
-        <input matInput [(ngModel)]="data.product.name">
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Price</mat-label>
-        <input matInput type="number" [(ngModel)]="data.product.price">
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Stock</mat-label>
-        <input matInput type="number" [(ngModel)]="data.product.stock">
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Category ID</mat-label>
-        <input matInput type="number" [(ngModel)]="data.product.categoryId">
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Description</mat-label>
-        <textarea matInput [(ngModel)]="data.product.description" rows="3"></textarea>
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Image URL</mat-label>
-        <input matInput [(ngModel)]="data.product.imageUrl">
-      </mat-form-field>
-    </mat-dialog-content>
-    <mat-dialog-actions align="end">
-      <button mat-button (click)="dialogRef.close()">Cancel</button>
-      <button mat-raised-button color="primary" (click)="save()">Save</button>
-    </mat-dialog-actions>
+    <div class="dialog-wrap">
+      <div class="dialog-header">
+        <h2>{{ isEdit ? 'Edit Product' : 'Add New Product' }}</h2>
+        <button class="es-btn-icon" (click)="dialogRef.close()">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+
+      <div class="dialog-body">
+        <div class="form-grid">
+          <div class="es-input-group full-span">
+            <label>Product Name</label>
+            <input type="text" class="es-input" [(ngModel)]="form.name" placeholder="Enter product name">
+          </div>
+          <div class="es-input-group">
+            <label>Price ($)</label>
+            <input type="number" class="es-input" [(ngModel)]="form.price" placeholder="0.00">
+          </div>
+          <div class="es-input-group">
+            <label>Stock</label>
+            <input type="number" class="es-input" [(ngModel)]="form.stock" placeholder="0">
+          </div>
+          <div class="es-input-group">
+            <label>Category ID</label>
+            <input type="number" class="es-input" [(ngModel)]="form.categoryId" placeholder="1">
+          </div>
+          <div class="es-input-group full-span">
+            <label>Description</label>
+            <textarea class="es-input" [(ngModel)]="form.description" rows="3"
+                      placeholder="Product description..."></textarea>
+          </div>
+
+          <div class="upload-section full-span">
+            <div class="upload-group">
+              <label>Promotional Video</label>
+              <div class="upload-area" [class.has-file]="videoPreview"
+                   (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onVideoDrop($event)">
+                <button class="upload-trigger-btn" (click)="videoInput.click()">
+                  @if (!videoPreview) {
+                    <span class="material-icons upload-icon">videocam</span>
+                    <span class="upload-text">Choose Video</span>
+                    <span class="upload-hint">MP4, WebM (max 50MB)</span>
+                  } @else {
+                    <div class="video-preview-wrap">
+                      <video [src]="videoPreview" muted class="video-preview"></video>
+                      <button class="remove-btn" (click)="removeVideo()" type="button">
+                        <span class="material-icons">close</span>
+                      </button>
+                    </div>
+                  }
+                </button>
+                <input type="file" #videoInput hidden (change)="onVideoSelect($event)">
+              </div>
+            </div>
+
+            <div class="upload-group">
+              <label>Product Images (1-5)</label>
+              <div class="upload-area images-area" [class.has-files]="imagePreviews.length > 0"
+                   (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onImagesDrop($event)">
+                <button class="upload-trigger-btn" (click)="imageInput.click()">
+                  <span class="material-icons upload-icon">add_photo_alternate</span>
+                  <span class="upload-text">Choose Images (1-5)</span>
+                </button>
+                @if (imagePreviews.length > 0) {
+                  <div class="images-preview-grid">
+                    @for (src of imagePreviews; track src; let i = $index) {
+                      <div class="image-preview-item">
+                        <img [src]="src" class="image-preview">
+                        <button class="remove-btn" (click)="removeImage(i)" type="button">
+                          <span class="material-icons">close</span>
+                        </button>
+                      </div>
+                    }
+                  </div>
+                }
+                <input type="file" #imageInput hidden multiple (change)="onImagesSelect($event)">
+              </div>
+              <span class="upload-counter">{{ imagePreviews.length }}/5 images</span>
+            </div>
+          </div>
+        </div>
+
+        @if (uploadError) {
+          <div class="upload-error-msg">
+            <span class="material-icons">error_outline</span>
+            {{ uploadError }}
+          </div>
+        }
+      </div>
+
+      <div class="dialog-footer">
+        <button class="es-btn es-btn-secondary" (click)="dialogRef.close()" [disabled]="saving">Cancel</button>
+        <button class="es-btn es-btn-primary" (click)="save()" [disabled]="saving">
+          @if (saving) {
+            <span class="material-icons spinning">sync</span>
+            Saving...
+          } @else {
+            <span class="material-icons">save</span>
+            Save Product
+          }
+        </button>
+      </div>
+    </div>
   `,
-  styles: [`.full-width { width: 100%; }`],
-  imports: [MatDialogModule, MatFormFieldModule, MatInputModule, FormsModule]
+  styles: [`
+    .dialog-wrap { padding: 24px; }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .dialog-header h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .dialog-body { margin-bottom: 24px; max-height: 60vh; overflow-y: auto; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .full-span { grid-column: 1 / -1; }
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-primary);
+    }
+    .upload-section {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      padding: 16px;
+      background: var(--bg-secondary);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-primary);
+    }
+    .upload-group label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .upload-area {
+      border: 2px dashed var(--border-secondary);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      text-align: center;
+      background: var(--bg-input);
+    }
+    .upload-area.has-file, .upload-area.has-files {
+      border-style: solid;
+      border-color: var(--accent-primary);
+      padding: 12px;
+    }
+    .upload-trigger-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 20px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .upload-trigger-btn:hover {
+      background: var(--accent-primary-glow);
+    }
+    .upload-trigger-btn .upload-icon { font-size: 36px; color: var(--accent-primary); }
+    .upload-trigger-btn .upload-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+    .upload-trigger-btn .upload-hint { font-size: 12px; color: var(--text-tertiary); }
+    .upload-area:hover, .upload-area.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-primary-glow);
+    }
+    .upload-area.has-file, .upload-area.has-files {
+      border-style: solid;
+      border-color: var(--accent-primary);
+      padding: 12px;
+    }
+    .file-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+    .upload-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .upload-icon { font-size: 40px; color: var(--accent-primary); }
+    .upload-text { font-size: 14px; color: var(--text-secondary); font-weight: 500; }
+    .upload-hint { font-size: 12px; color: var(--text-tertiary); }
+    .video-preview-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+    }
+    .video-preview { max-width: 100%; max-height: 200px; border-radius: var(--radius-sm); display: block; }
+    .images-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .image-preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+    .image-preview { width: 100%; height: 100%; object-fit: cover; }
+    .remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(248, 113, 113, 0.9);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+    .remove-btn .material-icons { font-size: 16px; }
+    .upload-counter { font-size: 12px; color: var(--text-tertiary); margin-top: 8px; display: block; }
+    .spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .upload-error-msg {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--danger-bg);
+      border: 1px solid var(--danger);
+      border-radius: var(--radius-md);
+      color: var(--danger);
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .upload-error-msg .material-icons { font-size: 18px; }
+    .es-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  `],
+  imports: [MatDialogModule, FormsModule],
+  standalone: true
 })
 export class ProductFormDialogComponent {
   isEdit = false;
+  saving = false;
+  form: any = {};
+  uploadError: string | null = null;
+
+  videoFile: File | null = null;
+  videoPreview: string | null = null;
+  imageFiles: File[] = [];
+  imagePreviews: string[] = [];
+
+  private static readonly MAX_VIDEO_SIZE = 50 * 1024 * 1024;
+  private static readonly MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+  private static readonly ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
+  private static readonly ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
   constructor(
     public dialogRef: MatDialogRef<ProductFormDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: any
+    @Inject(MAT_DIALOG_DATA) public data: any,
+    private api: ApiService,
+    private snackBar: MatSnackBar
   ) {
     this.isEdit = !!this.data.product.id;
+    this.form = { ...this.data.product };
+  }
+
+  onDragOver(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.add('drag-over');
+  }
+
+  onDragLeave(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.remove('drag-over');
+  }
+
+  onVideoSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      this.setVideo(input.files[0]);
+    }
+  }
+
+  onVideoDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.remove('drag-over');
+    if (event.dataTransfer?.files && event.dataTransfer.files[0]) {
+      this.setVideo(event.dataTransfer.files[0]);
+    }
+  }
+
+  setVideo(file: File) {
+    this.uploadError = null;
+    if (!file.type.startsWith('video/')) {
+      this.uploadError = `File is not a video. Type: ${file.type}`;
+      return;
+    }
+    if (file.size > ProductFormDialogComponent.MAX_VIDEO_SIZE) {
+      this.uploadError = `Video too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 50MB.`;
+      return;
+    }
+    this.videoFile = file;
+    const reader = new FileReader();
+    reader.onload = () => { this.videoPreview = reader.result as string; };
+    reader.readAsDataURL(file);
+  }
+
+  removeVideo() {
+    this.videoFile = null;
+    this.videoPreview = null;
+  }
+
+  onImagesSelect(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      this.addImages(Array.from(input.files));
+    }
+  }
+
+  onImagesDrop(event: DragEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    (event.currentTarget as HTMLElement).classList.remove('drag-over');
+    if (event.dataTransfer?.files) {
+      this.addImages(Array.from(event.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+    }
+  }
+
+  addImages(files: File[]) {
+    this.uploadError = null;
+    const remaining = 5 - this.imageFiles.length;
+    const toAdd = files.slice(0, remaining);
+    for (const file of toAdd) {
+      if (file.size > ProductFormDialogComponent.MAX_IMAGE_SIZE) {
+        this.uploadError = `"${file.name}" too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max 5MB each.`;
+        continue;
+      }
+      this.imageFiles.push(file);
+      const reader = new FileReader();
+      reader.onload = () => { this.imagePreviews.push(reader.result as string); };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeImage(index: number) {
+    this.imageFiles.splice(index, 1);
+    this.imagePreviews.splice(index, 1);
   }
 
   save(): void {
-    this.dialogRef.close(this.data.product);
+    this.uploadError = null;
+
+    if (!this.form.name?.trim()) {
+      this.uploadError = 'Product name is required.';
+      return;
+    }
+    if (this.form.price == null || this.form.price <= 0) {
+      this.uploadError = 'Valid price is required.';
+      return;
+    }
+    if (!this.form.categoryId) {
+      this.uploadError = 'Category ID is required.';
+      return;
+    }
+
+    this.saving = true;
+
+    const formData = new FormData();
+    formData.append('name', this.form.name.trim());
+    formData.append('price', String(this.form.price));
+    formData.append('description', this.form.description || '');
+    formData.append('categoryId', String(this.form.categoryId));
+    formData.append('stock', String(this.form.stock ?? 0));
+
+    if (this.videoFile) {
+      formData.append('video', this.videoFile, this.videoFile.name);
+    }
+    for (const file of this.imageFiles) {
+      formData.append('images', file, file.name);
+    }
+
+    if (this.isEdit && this.form.id) {
+      this.api.updateProductWithFiles(this.form.id, formData).subscribe({
+        next: (res) => {
+          this.saving = false;
+          this.snackBar.open(res.message, 'Close', { duration: 3000 });
+          this.dialogRef.close(res.data);
+        },
+        error: (err) => {
+          this.saving = false;
+          const msg = this.extractError(err);
+          this.uploadError = msg;
+          this.snackBar.open(msg, 'Close', { duration: 6000 });
+        }
+      });
+    } else {
+      this.api.uploadProduct(formData).subscribe({
+        next: (res) => {
+          this.saving = false;
+          this.snackBar.open(res.message, 'Close', { duration: 3000 });
+          this.dialogRef.close(res.data);
+        },
+        error: (err) => {
+          this.saving = false;
+          const msg = this.extractError(err);
+          this.uploadError = msg;
+          this.snackBar.open(msg, 'Close', { duration: 6000 });
+        }
+      });
+    }
+  }
+
+  private extractError(err: any): string {
+    if (err.status === 0) {
+      return 'Cannot connect to server. Make sure the backend is running on port 8080.';
+    }
+    if (err.status === 401) {
+      return 'Session expired. Please log in again.';
+    }
+    if (err.status === 403) {
+      return 'Access denied. Admin role required.';
+    }
+    if (err.error?.message) {
+      return err.error.message;
+    }
+    return `Upload failed (HTTP ${err.status}). Please try again.`;
   }
 }
