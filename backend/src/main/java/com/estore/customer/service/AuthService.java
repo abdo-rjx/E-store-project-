@@ -7,8 +7,8 @@ import com.estore.customer.entity.Profile;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
 import com.estore.shared.config.JwtService;
+import com.estore.shared.exception.AuthenticationException;
 import com.estore.shared.exception.EmailAlreadyExistsException;
-import com.estore.shared.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,10 +61,10 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new ResourceNotFoundException("Invalid email or password"));
+                .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new ResourceNotFoundException("Invalid email or password");
+            throw new AuthenticationException("Invalid email or password");
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());

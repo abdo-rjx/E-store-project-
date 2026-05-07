@@ -3,6 +3,11 @@ package com.estore.catalog.entity;
 import com.estore.inventory.entity.Inventory;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -32,4 +37,18 @@ public class Product {
 
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private Inventory inventory;
+
+    // NEW: Video path for product promotional video
+    private String videoPath;
+
+    // NEW: Multiple image paths (stored as comma-separated or in a separate table)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_path")
+    @Builder.Default
+    private List<String> imagePaths = new ArrayList<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
 }

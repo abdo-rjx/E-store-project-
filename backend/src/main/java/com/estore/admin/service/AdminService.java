@@ -5,6 +5,9 @@ import com.estore.catalog.service.CatalogService;
 import com.estore.inventory.service.InventoryService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class AdminService {
 
@@ -22,6 +25,21 @@ public class AdminService {
 
     public ProductDto updateProduct(Long id, ProductDto request) {
         return catalogService.updateProduct(id, request);
+    }
+
+    public ProductDto updateProductWithFiles(Long id, String name, Double price, String description,
+                                             Long categoryId, Integer stock, String videoPath,
+                                             java.util.List<String> imagePaths) {
+        ProductDto existing = catalogService.getProductById(id);
+        List<String> mergedImages = existing.imagePaths() != null ? new ArrayList<>(existing.imagePaths()) : new ArrayList<>();
+        if (imagePaths != null) {
+            mergedImages.addAll(imagePaths);
+        }
+        String finalVideo = videoPath != null ? videoPath : existing.videoPath();
+        String finalImage = imagePaths != null && !imagePaths.isEmpty() ? imagePaths.get(0) : existing.imageUrl();
+
+        ProductDto dto = new ProductDto(id, name, price, finalImage, description, null, categoryId, stock, finalVideo, mergedImages, null);
+        return catalogService.updateProduct(id, dto);
     }
 
     public void deleteProduct(Long id) {

@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -33,6 +34,12 @@ public class CatalogService {
 
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll().stream()
+                .map(this::mapToDto)
+                .toList();
+    }
+
+    public List<ProductDto> getLatestProducts(int limit) {
+        return productRepository.findTop3ByOrderByCreatedAtDesc().stream()
                 .map(this::mapToDto)
                 .toList();
     }
@@ -94,6 +101,8 @@ public class CatalogService {
                 .imageUrl(request.imageUrl())
                 .description(request.description())
                 .category(category)
+                .videoPath(request.videoPath())
+                .imagePaths(request.imagePaths() != null ? request.imagePaths() : new ArrayList<>())
                 .build();
 
         product = productRepository.save(product);
@@ -117,6 +126,8 @@ public class CatalogService {
         if (request.price() != null) product.setPrice(request.price());
         if (request.imageUrl() != null) product.setImageUrl(request.imageUrl());
         if (request.description() != null) product.setDescription(request.description());
+        if (request.videoPath() != null) product.setVideoPath(request.videoPath());
+        if (request.imagePaths() != null) product.setImagePaths(request.imagePaths());
 
         if (request.categoryId() != null) {
             Category category = categoryRepository.findById(request.categoryId())
@@ -146,7 +157,10 @@ public class CatalogService {
                 product.getDescription(),
                 product.getCategory() != null ? product.getCategory().getName() : null,
                 product.getCategory() != null ? product.getCategory().getId() : null,
-                inventory != null ? inventory.getQuantity() : 0
+                inventory != null ? inventory.getQuantity() : 0,
+                product.getVideoPath(),
+                product.getImagePaths(),
+                product.getCreatedAt() != null ? product.getCreatedAt().toString() : null
         );
     }
 }

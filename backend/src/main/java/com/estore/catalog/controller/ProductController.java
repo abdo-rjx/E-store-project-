@@ -52,4 +52,10 @@ public class ProductController {
         Page<ProductDto> result = catalogService.searchProductsPaginated(keyword, categoryId, pageable);
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(result)));
     }
+
+    // NEW: Get latest 3 products for video slider on home page
+    @GetMapping("/latest")
+    public ResponseEntity<ApiResponse<List<ProductDto>>> getLatestProducts() {
+        return ResponseEntity.ok(ApiResponse.ok(catalogService.getLatestProducts(3)));
+    }
 }
