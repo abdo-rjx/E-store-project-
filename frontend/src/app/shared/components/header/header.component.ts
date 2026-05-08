@@ -1,13 +1,14 @@
 import { Component, HostListener } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { ClickOutsideDirective } from '../../directives/click-outside.directive';
 import { AuthService } from '../../../core/services/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, ClickOutsideDirective],
   template: `
     <header class="navbar" [class.scrolled]="isScrolled" [class.nav-open]="mobileMenuOpen">
       <div class="navbar-inner">
@@ -65,7 +66,7 @@ import { ThemeService } from '../../../core/services/theme.service';
           </button>
 
           @if (authService.isLoggedIn) {
-            <div class="user-menu" (click)="userMenuOpen = !userMenuOpen" (clickOutside)="userMenuOpen = false">
+            <div class="user-menu" (click)="userMenuOpen = !userMenuOpen" (clickOutside)="userMenuOpen = false" clickOutside>
               <div class="user-avatar">
                 <span class="avatar-initial">{{ authService.currentUser?.firstName?.charAt(0) }}</span>
                 <span class="avatar-ring"></span>
@@ -757,6 +758,11 @@ export class HeaderComponent {
     if (!target.closest('.user-menu')) {
       this.userMenuOpen = false;
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  closeMenuOnEscape(): void {
+    this.userMenuOpen = false;
   }
 
   toggleMobile(): void {

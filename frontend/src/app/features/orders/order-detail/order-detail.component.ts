@@ -10,6 +10,7 @@ import { Order } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
+    <div class="container">
     @if (!order) {
       <div class="order-loader">
         <div class="ghost ghost-bar"></div>
@@ -90,6 +91,7 @@ import { Order } from '../../../core/models';
         </div>
       </div>
     }
+    </div>
   `,
   styles: [`
     .order-detail-stage { padding: 24px 0; }

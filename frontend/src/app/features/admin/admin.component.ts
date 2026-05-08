@@ -2,16 +2,17 @@ import { Component, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { finalize } from 'rxjs/operators';
 import { ApiService } from '../../core/services/api.service';
-import { Product } from '../../core/models';
+import { Category, Product } from '../../core/models';
 
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule],
+  imports: [CommonModule, FormsModule, MatDialogModule, MatSnackBarModule],
   template: `
-    <div class="admin-page">
+    <div class="admin-page container">
       <div class="admin-header">
         <div class="admin-header-left">
           <h1>Product Management</h1>
@@ -207,6 +208,7 @@ import { Product } from '../../core/models';
 })
 export class AdminComponent implements OnInit {
   products: Product[] = [];
+  categories: Category[] = [];
 
   get inStockCount(): number {
     return this.products.filter(p => p.stock > 0).length;
@@ -224,6 +226,7 @@ export class AdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadProducts();
+    this.loadCategories();
   }
 
   loadProducts(): void {
@@ -232,23 +235,21 @@ export class AdminComponent implements OnInit {
     });
   }
 
+  loadCategories(): void {
+    this.api.getCategories().subscribe({
+      next: (res) => { this.categories = res.data; }
+    });
+  }
+
   openAddDialog(): void {
     const dialogRef = this.dialog.open(ProductFormDialogComponent, {
       width: '640px',
       maxWidth: '95vw',
-      data: { product: { name: '', price: 0, stock: 0, categoryId: 1, description: '', imageUrl: '' } }
+      data: { product: { name: '', price: 0, stock: 0, categoryId: null, description: '', imageUrl: '' }, categories: this.categories }
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.api.createProduct(result).subscribe({
-          next: () => {
-            this.snackBar.open('Product created', 'Close', { duration: 3000 });
-            this.loadProducts();
-          },
-          error: (err) => {
-            this.snackBar.open(err.error?.message || 'Failed to create product', 'Close', { duration: 5000 });
-          }
-        });
+        this.loadProducts();
       }
     });
   }
@@ -257,7 +258,7 @@ export class AdminComponent implements OnInit {
     const dialogRef = this.dialog.open(ProductFormDialogComponent, {
       width: '640px',
       maxWidth: '95vw',
-      data: { product: { ...product } }
+      data: { product: { ...product }, categories: this.categories }
     });
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
@@ -307,8 +308,13 @@ export class AdminComponent implements OnInit {
             <input type="number" class="es-input" [(ngModel)]="form.stock" placeholder="0">
           </div>
           <div class="es-input-group">
-            <label>Category ID</label>
-            <input type="number" class="es-input" [(ngModel)]="form.categoryId" placeholder="1">
+            <label>Category</label>
+            <select class="es-input" [(ngModel)]="form.categoryId">
+              <option [ngValue]="null" disabled>Select a category</option>
+              @for (cat of categories; track cat.id) {
+                <option [ngValue]="cat.id">{{ cat.name }}</option>
+              }
+            </select>
           </div>
           <div class="es-input-group full-span">
             <label>Description</label>
@@ -544,13 +550,14 @@ export class AdminComponent implements OnInit {
     .upload-error-msg .material-icons { font-size: 18px; }
     .es-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   `],
-  imports: [MatDialogModule, FormsModule],
+  imports: [CommonModule, MatDialogModule, FormsModule, MatSnackBarModule],
   standalone: true
 })
 export class ProductFormDialogComponent {
   isEdit = false;
   saving = false;
   form: any = {};
+  categories: Category[] = [];
   uploadError: string | null = null;
 
   videoFile: File | null = null;
@@ -571,6 +578,7 @@ export class ProductFormDialogComponent {
   ) {
     this.isEdit = !!this.data.product.id;
     this.form = { ...this.data.product };
+    this.categories = this.data.categories || [];
   }
 
   onDragOver(event: DragEvent) {
@@ -692,28 +700,28 @@ export class ProductFormDialogComponent {
     }
 
     if (this.isEdit && this.form.id) {
-      this.api.updateProductWithFiles(this.form.id, formData).subscribe({
+      this.api.updateProductWithFiles(this.form.id, formData).pipe(
+        finalize(() => this.saving = false)
+      ).subscribe({
         next: (res) => {
-          this.saving = false;
           this.snackBar.open(res.message, 'Close', { duration: 3000 });
           this.dialogRef.close(res.data);
         },
         error: (err) => {
-          this.saving = false;
           const msg = this.extractError(err);
           this.uploadError = msg;
           this.snackBar.open(msg, 'Close', { duration: 6000 });
         }
       });
     } else {
-      this.api.uploadProduct(formData).subscribe({
+      this.api.uploadProduct(formData).pipe(
+        finalize(() => this.saving = false)
+      ).subscribe({
         next: (res) => {
-          this.saving = false;
           this.snackBar.open(res.message, 'Close', { duration: 3000 });
           this.dialogRef.close(res.data);
         },
         error: (err) => {
-          this.saving = false;
           const msg = this.extractError(err);
           this.uploadError = msg;
           this.snackBar.open(msg, 'Close', { duration: 6000 });

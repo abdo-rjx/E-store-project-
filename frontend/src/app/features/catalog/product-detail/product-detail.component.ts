@@ -12,6 +12,7 @@ import { Product, Review } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
+    <div class="container">
     @if (!product) {
       <div class="page-loader">
         <div class="loader-skeleton">
@@ -187,6 +188,7 @@ import { Product, Review } from '../../../core/models';
         }
       </section>
     }
+    </div>
   `,
   styles: [`
     /* LOADER */

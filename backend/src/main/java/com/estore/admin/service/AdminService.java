@@ -4,6 +4,7 @@ import com.estore.catalog.dto.ProductDto;
 import com.estore.catalog.service.CatalogService;
 import com.estore.inventory.service.InventoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,19 +28,27 @@ public class AdminService {
         return catalogService.updateProduct(id, request);
     }
 
+    @Transactional
     public ProductDto updateProductWithFiles(Long id, String name, Double price, String description,
                                              Long categoryId, Integer stock, String videoPath,
                                              java.util.List<String> imagePaths) {
         ProductDto existing = catalogService.getProductById(id);
-        List<String> mergedImages = existing.imagePaths() != null ? new ArrayList<>(existing.imagePaths()) : new ArrayList<>();
-        if (imagePaths != null) {
-            mergedImages.addAll(imagePaths);
-        }
+
+        List<String> finalImages = imagePaths != null && !imagePaths.isEmpty()
+                ? new ArrayList<>(imagePaths)
+                : (existing.imagePaths() != null ? new ArrayList<>(existing.imagePaths()) : new ArrayList<>());
+
         String finalVideo = videoPath != null ? videoPath : existing.videoPath();
         String finalImage = imagePaths != null && !imagePaths.isEmpty() ? imagePaths.get(0) : existing.imageUrl();
 
-        ProductDto dto = new ProductDto(id, name, price, finalImage, description, null, categoryId, stock, finalVideo, mergedImages, null);
-        return catalogService.updateProduct(id, dto);
+        ProductDto dto = new ProductDto(id, name, price, finalImage, description, null, categoryId, stock, finalVideo, finalImages, null);
+        catalogService.updateProduct(id, dto);
+
+        if (stock != null) {
+            inventoryService.updateStock(id, stock);
+        }
+
+        return catalogService.getProductById(id);
     }
 
     public void deleteProduct(Long id) {

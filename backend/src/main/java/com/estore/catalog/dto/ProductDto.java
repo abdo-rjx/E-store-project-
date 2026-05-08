@@ -1,15 +1,19 @@
 package com.estore.catalog.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+
 import java.util.List;
 
 public record ProductDto(
         Long id,
-        String name,
-        Double price,
+        @NotBlank String name,
+        @NotNull @Positive Double price,
         String imageUrl,
         String description,
         String categoryName,
-        Long categoryId,
+        @NotNull Long categoryId,
         Integer stock,
         String videoPath,
         List<String> imagePaths,

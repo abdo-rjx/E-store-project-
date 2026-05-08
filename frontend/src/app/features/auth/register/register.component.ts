@@ -11,7 +11,7 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="auth-stage">
+    <div class="auth-stage container">
       <div class="auth-ambience">
         <div class="ambience-orb ambience-orb--primary"></div>
         <div class="ambience-orb ambience-orb--secondary"></div>

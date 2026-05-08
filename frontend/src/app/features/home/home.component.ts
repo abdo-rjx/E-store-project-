@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { StickySectionComponent } from '../../shared/components/sticky-section/sticky-section.component';
@@ -496,13 +496,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     }
   `],
 })
-export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
+export class HomeComponent implements OnInit, OnDestroy {
   featuredProducts: Product[] = [];
   latestProducts: Product[] = [];
   activeSlide = 0;
   sliderLoaded = false;
   private autoSlideTimer: any;
-  @ViewChild('slideVideos', { read: ElementRef }) slideVideos!: ElementRef<HTMLVideoElement>;
 
   constructor(
     private api: ApiService,
@@ -512,16 +511,12 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.loadLatestProducts();
-    this.api.getProducts().subscribe({
+    this.api.getProductsPaginated(0, 6).subscribe({
       next: (res) => {
-        this.featuredProducts = res.data.slice(0, 6);
+        this.featuredProducts = res.data.content;
       },
       error: () => this.snackBar.open('Failed to load products', 'Close', { duration: 3000 }),
     });
-  }
-
-  ngAfterViewInit(): void {
-    this.startAutoSlide();
   }
 
   private loadLatestProducts(): void {
@@ -530,6 +525,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         this.latestProducts = res.data;
         this.sliderLoaded = true;
         this.playActiveVideo();
+        this.startAutoSlide();
       },
       error: () => {
         this.sliderLoaded = true;
@@ -566,7 +562,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private playActiveVideo(): void {
     setTimeout(() => {
-      const videos = document.querySelectorAll('.slide-video');
+      const videos = document.querySelectorAll('.frame-video');
       videos.forEach((video, i) => {
         const v = video as HTMLVideoElement;
         if (i === this.activeSlide) {
@@ -580,7 +576,7 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private pauseAllVideos(): void {
-    const videos = document.querySelectorAll('.slide-video');
+    const videos = document.querySelectorAll('.frame-video');
     videos.forEach(video => {
       (video as HTMLVideoElement).pause();
     });

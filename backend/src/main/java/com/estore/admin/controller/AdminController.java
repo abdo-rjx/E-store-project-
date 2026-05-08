@@ -30,13 +30,6 @@ public class AdminController {
         this.fileStorageService = fileStorageService;
     }
 
-    @PostMapping("/products")
-    public ResponseEntity<ApiResponse<ProductDto>> createProduct(@Valid @RequestBody ProductDto request) {
-        ProductDto product = adminService.createProduct(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.ok("Product created", product));
-    }
-
     @PutMapping("/products/{id}")
     public ResponseEntity<ApiResponse<ProductDto>> updateProduct(
             @PathVariable Long id,
@@ -49,14 +42,6 @@ public class AdminController {
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
         adminService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.ok("Product deleted", null));
-    }
-
-    @PutMapping("/inventory/{productId}")
-    public ResponseEntity<ApiResponse<Void>> updateStock(
-            @PathVariable Long productId,
-            @RequestParam Integer quantity) {
-        adminService.updateStock(productId, quantity);
-        return ResponseEntity.ok(ApiResponse.ok("Stock updated", null));
     }
 
     @PutMapping(value = "/products/{id}/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -102,6 +87,14 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage(), null));
         }
+    }
+
+    @PostMapping("/products")
+    public ResponseEntity<ApiResponse<ProductDto>> createProduct(
+            @Valid @RequestBody ProductDto request) {
+        ProductDto product = adminService.createProduct(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Product created", product));
     }
 
     @PostMapping(value = "/products/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

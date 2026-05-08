@@ -1,5 +1,6 @@
 package com.estore.shared.storage;
 
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -32,14 +33,17 @@ public class FileStorageService {
             uploadRoot = currentDir.resolve("backend/src/main/resources/static/uploads");
         }
 
+        log.info("FileStorageService initialized. Upload root: {}", uploadRoot);
+    }
+
+    @PostConstruct
+    public void init() {
         try {
             Files.createDirectories(uploadRoot.resolve("images"));
             Files.createDirectories(uploadRoot.resolve("videos"));
         } catch (IOException e) {
             throw new RuntimeException("Cannot create upload directories at: " + uploadRoot, e);
         }
-
-        log.info("FileStorageService initialized. Upload root: {}", uploadRoot);
     }
 
     public String storeImage(MultipartFile file) {
@@ -109,7 +113,7 @@ public class FileStorageService {
             throw new IllegalArgumentException(type + " has no file extension: " + originalName);
         }
         if (!allowedExtensions.contains(extension.toLowerCase())) {
-            throw new IllegalArgumentException(type + " type '." + extension + "' not allowed. Allowed: jpg, jpeg, png, gif, webp");
+            throw new IllegalArgumentException(type + " type '." + extension + "' not allowed. Allowed: " + String.join(", ", allowedExtensions));
         }
     }
 

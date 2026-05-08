@@ -10,7 +10,7 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   template: `
-    <div class="profile-stage">
+    <div class="profile-stage container">
       <div class="profile-prologue">
         <h1>My Profile</h1>
         <p class="profile-subtitle">Manage your account information and preferences.</p>

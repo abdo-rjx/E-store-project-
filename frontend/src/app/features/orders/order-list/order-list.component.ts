@@ -11,7 +11,7 @@ import { Order } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="orders-stage">
+    <div class="orders-stage container">
       <div class="orders-prologue">
         <h1>My Orders</h1>
         <p class="orders-subtitle">Track and manage your purchases.</p>

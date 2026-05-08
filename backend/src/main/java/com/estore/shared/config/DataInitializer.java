@@ -72,18 +72,20 @@ public class DataInitializer implements CommandLineRunner {
         Product p5 = createProduct("Clean Code", 39.99, "A handbook of agile software craftsmanship", "https://placehold.co/300x300/e94560/ffffff?text=Code", books, 40);
         Product p6 = createProduct("Running Shoes", 89.99, "Comfortable shoes for daily running", "https://placehold.co/300x300/1a1a2e/ffffff?text=Shoes", clothing, 60);
 
-        Cart cart1 = new Cart();
-        cart1.setUser(user1);
-        cart1.setCreatedAt(LocalDateTime.now());
-        cart1 = cartRepository.save(cart1);
+        if (!cartRepository.findByUserId(user1.getId()).isPresent()) {
+            Cart cart1 = new Cart();
+            cart1.setUser(user1);
+            cart1.setCreatedAt(LocalDateTime.now());
+            cart1 = cartRepository.save(cart1);
 
-        CartItem ci1 = new CartItem();
-        ci1.setProduct(p1);
-        ci1.setQuantity(1);
-        ci1.setUnitPrice(p1.getPrice());
-        ci1.setCart(cart1);
-        cart1.setItems(List.of(ci1));
-        cartRepository.save(cart1);
+            CartItem ci1 = new CartItem();
+            ci1.setProduct(p1);
+            ci1.setQuantity(1);
+            ci1.setUnitPrice(p1.getPrice());
+            ci1.setCart(cart1);
+            cart1.setItems(List.of(ci1));
+            cartRepository.save(cart1);
+        }
 
         log.info("Demo data initialized successfully!");
         log.info("Accounts: admin@estore.com / admin123, omar@test.com / user123, fatima@test.com / user123");
@@ -93,11 +95,12 @@ public class DataInitializer implements CommandLineRunner {
         if (userRepository.existsByEmail(email)) {
             return userRepository.findByEmail(email).get();
         }
+        String password = role.equals("ADMIN") ? "admin123" : "user123";
         User user = User.builder()
                 .firstName(first)
                 .lastName(last)
                 .email(email)
-                .password(passwordEncoder.encode("user123"))
+                .password(passwordEncoder.encode(password))
                 .role(role)
                 .build();
         Profile profile = Profile.builder()
@@ -112,6 +115,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Category createCategory(String name, String description) {
+        if (categoryRepository.findByName(name).isPresent()) {
+            return categoryRepository.findByName(name).get();
+        }
         return categoryRepository.save(Category.builder()
                 .name(name)
                 .description(description)
@@ -119,6 +125,9 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Product createProduct(String name, Double price, String desc, String imageUrl, Category category, Integer stock) {
+        if (productRepository.findByName(name).isPresent()) {
+            return productRepository.findByName(name).get();
+        }
         Product product = Product.builder()
                 .name(name)
                 .price(price)

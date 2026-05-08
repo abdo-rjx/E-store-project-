@@ -11,7 +11,7 @@ import { Cart, CartItem } from '../../core/models';
   standalone: true,
   imports: [CommonModule, RouterLink],
   template: `
-    <div class="cart-stage">
+    <div class="cart-stage container">
       <div class="cart-prologue">
         <h1>Review Cart</h1>
         <p class="cart-subtitle">Secure checkout powered by Estoré.</p>

@@ -10,7 +10,9 @@ import com.estore.inventory.entity.Inventory;
 import com.estore.inventory.repository.InventoryRepository;
 import com.estore.shared.exception.ResourceNotFoundException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +41,7 @@ public class CatalogService {
     }
 
     public List<ProductDto> getLatestProducts(int limit) {
-        return productRepository.findTop3ByOrderByCreatedAtDesc().stream()
+        return productRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent().stream()
                 .map(this::mapToDto)
                 .toList();
     }

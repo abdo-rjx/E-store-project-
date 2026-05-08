@@ -12,6 +12,7 @@ import { Product, Category, PageResponse } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule, MatPaginatorModule, ProductCardComponent],
   template: `
+    <div class="container">
     <!-- EDITORIAL HERO -->
     <section class="page-hero">
       <div class="hero-atmosphere">
@@ -123,6 +124,7 @@ import { Product, Category, PageResponse } from '../../../core/models';
         }
       }
     </section>
+    </div>
   `,
   styles: [`
     /* HERO */

@@ -199,6 +199,45 @@ class CatalogServiceTest {
     }
 
     @Test
+    void createProduct_shouldSaveProductAndCreateInventory() {
+        ProductDto request = new ProductDto(null, "New Phone", 599.99, null, "A new phone", null, 1L, 10);
+        Product savedProduct = Product.builder()
+                .id(10L)
+                .name("New Phone")
+                .price(599.99)
+                .description("A new phone")
+                .category(electronics)
+                .build();
+        Inventory savedInventory = Inventory.builder()
+                .id(10L)
+                .product(savedProduct)
+                .quantity(10)
+                .build();
+        savedProduct.setInventory(savedInventory);
+
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(electronics));
+        when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
+        when(inventoryRepository.save(any(Inventory.class))).thenReturn(savedInventory);
+
+        ProductDto result = catalogService.createProduct(request);
+
+        assertThat(result).isNotNull();
+        assertThat(result.name()).isEqualTo("New Phone");
+        assertThat(result.price()).isEqualTo(599.99);
+        verify(productRepository).save(any(Product.class));
+        verify(inventoryRepository).save(any(Inventory.class));
+    }
+
+    @Test
+    void deleteProduct_shouldThrowResourceNotFoundException_whenProductDoesNotExist() {
+        when(productRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> catalogService.deleteProduct(99L))
+                .isInstanceOf(com.estore.shared.exception.ResourceNotFoundException.class)
+                .hasMessageContaining("Product not found");
+    }
+
+    @Test
     void getAllCategories_shouldReturnCategories() {
         when(categoryRepository.findAll()).thenReturn(List.of(electronics));
 
