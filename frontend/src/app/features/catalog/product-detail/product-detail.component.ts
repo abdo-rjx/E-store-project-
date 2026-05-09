@@ -12,6 +12,12 @@ import { Product, Review } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
+    @if (product?.videoPath) {
+      <div class="hero-video-wrap">
+        <video [src]="product.videoPath" autoplay loop muted playsinline class="hero-video"></video>
+      </div>
+    }
+
     <div class="container">
     @if (!product) {
       <div class="page-loader">
@@ -34,41 +40,18 @@ import { Product, Review } from '../../../core/models';
         </a>
       </nav>
 
-      <!-- Product Layout -->
+      <!-- Section 2: Two column layout -->
       <div class="product-stage">
         <!-- Visual side -->
         <section class="stage-visual reveal">
-          <div class="media-gallery">
-            <div class="media-main">
-              @if (selectedMedia.type === 'video') {
-                <video [src]="selectedMedia.src" controls autoplay muted class="media-content"></video>
-              } @else {
-                <img [src]="selectedMedia.src" [alt]="product.name" class="media-content"
-                     onerror="this.src='https://placehold.co/600x500/1a1a2e/7C6FF7?text=E-Store'">
-              }
-              @if (product.stock <= 5 && product.stock > 0) {
-                <div class="media-tag media-tag--low">Only {{ product.stock }} left</div>
-              }
-              @if (product.stock === 0) {
-                <div class="media-tag media-tag--out">Sold Out</div>
-              }
-            </div>
-
-            @if (allMedia.length > 1) {
-              <div class="media-strip">
-                @for (media of allMedia; track media.src; let i = $index) {
-                  <button class="strip-thumb" [class.is-selected]="i === activeMediaIndex" (click)="selectMedia(i)">
-                    @if (media.type === 'video') {
-                      <video [src]="media.src" muted class="thumb-visual"></video>
-                      <span class="thumb-play">
-                        <span class="material-icons">play_arrow</span>
-                      </span>
-                    } @else {
-                      <img [src]="media.src" class="thumb-visual">
-                    }
-                  </button>
-                }
-              </div>
+          <div class="media-main">
+            <img [src]="product.imagePaths?.[0] || product.imageUrl" [alt]="product.name" class="media-content"
+                 onerror="this.src='https://placehold.co/600x500/1a1a2e/7C6FF7?text=E-Store'">
+            @if (product.stock <= 5 && product.stock > 0) {
+              <div class="media-tag media-tag--low">Only {{ product.stock }} left</div>
+            }
+            @if (product.stock === 0) {
+              <div class="media-tag media-tag--out">Sold Out</div>
             }
           </div>
         </section>
@@ -127,6 +110,13 @@ import { Product, Review } from '../../../core/models';
           }
         </section>
       </div>
+
+      <!-- Section 3: Description block -->
+      @if (product.description) {
+        <section class="desc-section reveal">
+          <p class="desc-text">{{ product.description }}</p>
+        </section>
+      }
 
       <!-- Reviews -->
       <section class="reviews-block reveal">
@@ -191,6 +181,23 @@ import { Product, Review } from '../../../core/models';
     </div>
   `,
   styles: [`
+    /* HERO VIDEO */
+    .hero-video-wrap {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      height: 560px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .hero-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
     /* LOADER */
     .page-loader { padding: 48px 0; }
 
@@ -208,7 +215,7 @@ import { Product, Review } from '../../../core/models';
     .ghost-desc { height: 60px; width: 90%; }
 
     /* Breadcrumb */
-    .crumb { margin-bottom: 28px; }
+    .crumb { margin-bottom: 28px; margin-top: 32px; }
 
     .crumb-link {
       display: inline-flex;
@@ -234,12 +241,6 @@ import { Product, Review } from '../../../core/models';
     }
 
     /* Visual section */
-    .media-gallery {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
     .media-main {
       position: relative;
       border-radius: var(--radius-xl);
@@ -279,56 +280,6 @@ import { Product, Review } from '../../../core/models';
       color: var(--danger);
       border: 1px solid rgba(239, 68, 68, 0.3);
     }
-
-    /* Thumbnails strip */
-    .media-strip {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding: 4px 0;
-    }
-
-    .strip-thumb {
-      width: 72px;
-      height: 72px;
-      border-radius: var(--radius-sm);
-      overflow: hidden;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.25s ease;
-      flex-shrink: 0;
-      position: relative;
-      background: transparent;
-      padding: 0;
-    }
-
-    .strip-thumb:hover {
-      border-color: var(--border-secondary);
-      transform: translateY(-2px);
-    }
-
-    .strip-thumb.is-selected {
-      border-color: var(--accent-primary);
-      box-shadow: 0 0 0 1px var(--accent-primary);
-    }
-
-    .thumb-visual {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .thumb-play {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.35);
-      color: #fff;
-    }
-
-    .thumb-play .material-icons { font-size: 22px; }
 
     /* Info section */
     .stage-info {
@@ -501,6 +452,21 @@ import { Product, Review } from '../../../core/models';
     .btn-outline:hover {
       border-color: var(--accent-primary);
       color: var(--accent-primary);
+    }
+
+    /* Description section */
+    .desc-section {
+      border-top: 1px solid var(--border-primary);
+      padding: 56px 0;
+      margin-bottom: 24px;
+    }
+
+    .desc-text {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.15rem;
+      line-height: 1.9;
+      color: var(--text-secondary);
+      max-width: 720px;
     }
 
     /* Reviews */
@@ -681,6 +647,10 @@ import { Product, Review } from '../../../core/models';
 
     /* Responsive */
     @media (max-width: 768px) {
+      .hero-video-wrap {
+        height: 320px;
+      }
+
       .product-stage {
         grid-template-columns: 1fr;
         gap: 28px;
@@ -696,9 +666,12 @@ import { Product, Review } from '../../../core/models';
 
       .btn-cart { width: 100%; }
 
-      .strip-thumb {
-        width: 56px;
-        height: 56px;
+      .desc-section {
+        padding: 40px 0;
+      }
+
+      .desc-text {
+        font-size: 1rem;
       }
     }
   `]
@@ -709,31 +682,6 @@ export class ProductDetailComponent implements OnInit {
   quantity = 1;
   loading = false;
   newReview = { rating: 5, comment: '' };
-  activeMediaIndex = 0;
-
-  get allMedia(): { type: 'image' | 'video'; src: string }[] {
-    if (!this.product) return [];
-    const media: { type: 'image' | 'video'; src: string }[] = [];
-
-    if (this.product.videoPath) {
-      media.push({ type: 'video', src: this.product.videoPath });
-    }
-
-    const images = this.product.imagePaths || [];
-    for (const img of images) {
-      media.push({ type: 'image', src: img });
-    }
-
-    if (media.length === 0 && this.product.imageUrl) {
-      media.push({ type: 'image', src: this.product.imageUrl });
-    }
-
-    return media;
-  }
-
-  get selectedMedia() {
-    return this.allMedia[this.activeMediaIndex] || { type: 'image', src: '' };
-  }
 
   constructor(
     private route: ActivatedRoute,
@@ -752,10 +700,6 @@ export class ProductDetailComponent implements OnInit {
       error: () => this.snackBar.open('Product not found', 'Close', { duration: 3000 })
     });
     this.loadReviews(id);
-  }
-
-  selectMedia(index: number) {
-    this.activeMediaIndex = index;
   }
 
   private revealElements(): void {
