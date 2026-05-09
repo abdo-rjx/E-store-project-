@@ -27,8 +27,15 @@ import { Product, Review } from '../../../core/models';
         <!-- Visual side -->
         <section class="stage-visual reveal">
           <div class="media-main">
-            <img [src]="product.imagePaths?.[0] || product.imageUrl" [alt]="product.name" class="media-content"
-                 onerror="this.src='https://placehold.co/600x500/1a1a2e/7C6FF7?text=E-Store'">
+            @if (product.imagePaths && product.imagePaths.length >= 2) {
+              <div class="media-duo">
+                <img [src]="product.imagePaths[0]" [alt]="product.name" class="media-duo-img">
+                <img [src]="product.imagePaths[1]" [alt]="product.name" class="media-duo-img">
+              </div>
+            } @else {
+              <img [src]="product.imagePaths?.[0] || product.imageUrl" [alt]="product.name" class="media-content"
+                   onerror="this.src='https://placehold.co/600x500/1a1a2e/7C6FF7?text=E-Store'">
+            }
             @if (product.stock <= 5 && product.stock > 0) {
               <div class="media-tag media-tag--low">Only {{ product.stock }} left</div>
             }
@@ -74,23 +81,25 @@ import { Product, Review } from '../../../core/models';
             </div>
           </div>
 
-          @if (authService.isLoggedIn && product.stock > 0) {
-            <div class="cart-actions">
-              <div class="qty">
-                <button class="qty-btn" (click)="quantity > 1 && (quantity = quantity - 1)">
-                  <span class="material-icons">remove</span>
-                </button>
-                <span class="qty-num">{{ quantity }}</span>
-                <button class="qty-btn" (click)="quantity = quantity + 1">
-                  <span class="material-icons">add</span>
+          @if (authService.isLoggedIn) {
+            @if (product.stock > 0) {
+              <div class="cart-actions">
+                <div class="qty">
+                  <button class="qty-btn" (click)="quantity > 1 && (quantity = quantity - 1)">
+                    <span class="material-icons">remove</span>
+                  </button>
+                  <span class="qty-num">{{ quantity }}</span>
+                  <button class="qty-btn" (click)="quantity = quantity + 1">
+                    <span class="material-icons">add</span>
+                  </button>
+                </div>
+                <button class="btn-cart" (click)="addToCart()" [disabled]="loading">
+                  <span class="material-icons">shopping_bag</span>
+                  @if (loading) { Adding... } @else { Add to Cart }
                 </button>
               </div>
-              <button class="btn-cart" (click)="addToCart()" [disabled]="loading">
-                <span class="material-icons">shopping_bag</span>
-                @if (loading) { Adding... } @else { Add to Cart }
-              </button>
-            </div>
-          } @else if (!authService.isLoggedIn) {
+            }
+          } @else {
             <a routerLink="/login" class="btn-outline">
               Sign in to purchase
             </a>
@@ -237,6 +246,23 @@ import { Product, Review } from '../../../core/models';
       width: 100%;
       aspect-ratio: 4 / 3;
       object-fit: cover;
+      display: block;
+    }
+
+    .media-duo {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 400px;
+      overflow: hidden;
+    }
+
+    .media-duo-img {
+      width: 50%;
+      height: 100%;
+      object-fit: contain;
       display: block;
     }
 
