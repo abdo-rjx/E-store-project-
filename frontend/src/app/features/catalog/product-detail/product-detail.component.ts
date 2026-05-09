@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -45,7 +45,7 @@ import { Product, Review } from '../../../core/models';
           </div>
           @if (product.videoPath) {
             <div class="media-video">
-              <video [src]="product.videoPath" autoplay loop muted [muted]="true" playsinline class="media-video-player"></video>
+              <video [src]="product.videoPath" autoplay loop muted [muted]="true" playsinline class="media-video-player" #videoPlayer></video>
             </div>
           }
         </section>
@@ -702,12 +702,14 @@ import { Product, Review } from '../../../core/models';
     }
   `]
 })
-export class ProductDetailComponent implements OnInit {
+export class ProductDetailComponent implements OnInit, AfterViewInit {
   product: Product | null = null;
   reviews: Review[] = [];
   quantity = 1;
   loading = false;
   newReview = { rating: 5, comment: '' };
+
+  @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
 
   constructor(
     private route: ActivatedRoute,
@@ -726,6 +728,13 @@ export class ProductDetailComponent implements OnInit {
       error: () => this.snackBar.open('Product not found', 'Close', { duration: 3000 })
     });
     this.loadReviews(id);
+  }
+
+  ngAfterViewInit(): void {
+    if (this.videoPlayer?.nativeElement) {
+      this.videoPlayer.nativeElement.muted = true;
+      this.videoPlayer.nativeElement.volume = 0;
+    }
   }
 
   private revealElements(): void {

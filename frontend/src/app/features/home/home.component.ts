@@ -28,6 +28,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
               <video
                 [src]="product.videoPath"
                 muted
+                [muted]="true"
                 loop
                 [autoplay]="i === activeSlide"
                 [playsInline]="true"

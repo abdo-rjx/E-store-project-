@@ -334,7 +334,7 @@ export class AdminComponent implements OnInit {
                     <span class="upload-hint">MP4, WebM (max 50MB)</span>
                   } @else {
                     <div class="video-preview-wrap">
-                      <video [src]="videoPreview" muted class="video-preview"></video>
+                      <video [src]="videoPreview" muted [muted]="true" class="video-preview"></video>
                       <button class="remove-btn" (click)="removeVideo()" type="button">
                         <span class="material-icons">close</span>
                       </button>
