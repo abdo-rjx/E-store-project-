@@ -1,6 +1,6 @@
 import { Component, Input, HostListener, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Product } from '../../../core/models';
 
 @Component({
@@ -11,6 +11,7 @@ import { Product } from '../../../core/models';
     <a [routerLink]="['/products', product.id]" class="card-link">
       <article class="es-card product-card"
                #cardEl
+               (click)="onCardClick()"
                (mouseenter)="onEnter()"
                (mouseleave)="onLeave()"
                (mousemove)="onMove($event)">
@@ -76,6 +77,7 @@ import { Product } from '../../../core/models';
       will-change: transform;
       transform-style: preserve-3d;
       transition: transform 0.15s ease-out, box-shadow 0.4s ease;
+      cursor: pointer;
     }
 
     .product-card:hover {
@@ -305,9 +307,14 @@ export class ProductCardComponent {
 
   constructor(
     private elRef: ElementRef,
-    private renderer: Renderer2
+    private renderer: Renderer2,
+    private router: Router
   ) {
     this.el = elRef.nativeElement;
+  }
+
+  onCardClick(): void {
+    this.router.navigate(['/products', this.product.id]);
   }
 
   onEnter(): void {

@@ -120,6 +120,10 @@ export class ApiService {
     return this.http.put<ApiResponse<void>>(`${this.baseUrl}/admin/inventory/${productId}?quantity=${quantity}`, {});
   }
 
+  createCategory(data: { name: string }): Observable<ApiResponse<Category>> {
+    return this.http.post<ApiResponse<Category>>(`${this.baseUrl}/admin/categories`, data);
+  }
+
   // NEW: Upload product with files (video + images)
   uploadProduct(formData: FormData): Observable<ApiResponse<Product>> {
     return this.http.post<ApiResponse<Product>>(`${this.baseUrl}/admin/products/upload`, formData);

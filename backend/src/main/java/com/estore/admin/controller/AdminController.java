@@ -1,6 +1,7 @@
 package com.estore.admin.controller;
 
 import com.estore.admin.service.AdminService;
+import com.estore.catalog.dto.CategoryDto;
 import com.estore.catalog.dto.ProductDto;
 import com.estore.shared.model.ApiResponse;
 import com.estore.shared.storage.FileStorageService;
@@ -87,6 +88,13 @@ public class AdminController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(e.getMessage(), null));
         }
+    }
+
+    @PostMapping("/categories")
+    public ResponseEntity<ApiResponse<CategoryDto>> createCategory(@RequestBody CategoryDto request) {
+        CategoryDto category = adminService.createCategory(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.ok("Category created", category));
     }
 
     @PostMapping("/products")

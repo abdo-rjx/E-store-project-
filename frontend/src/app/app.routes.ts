@@ -49,5 +49,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/admin/admin.component').then(m => m.AdminComponent),
     canActivate: [AdminGuard]
   },
+  {
+    path: 'shop/category/:categoryName',
+    loadComponent: () => import('./features/catalog/category-page/category-page.component').then(m => m.CategoryPageComponent)
+  },
+  {
+    path: 'checkout',
+    loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
+    canActivate: [AuthGuard]
+  },
   { path: '**', redirectTo: 'products' }
 ];

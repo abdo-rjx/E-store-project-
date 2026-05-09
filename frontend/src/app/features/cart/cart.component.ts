@@ -479,16 +479,6 @@ export class CartComponent implements OnInit {
   }
 
   checkout(): void {
-    const userId = this.auth.userId;
-    if (!userId) return;
-    this.loading = true;
-    this.api.placeOrder(userId).subscribe({
-      next: (res) => {
-        this.snackBar.open('Order placed successfully!', 'Close', { duration: 3000 });
-        this.loading = false;
-        this.router.navigate(['/orders', res.data.id]);
-      },
-      error: () => { this.loading = false; }
-    });
+    this.router.navigate(['/checkout']);
   }
 }

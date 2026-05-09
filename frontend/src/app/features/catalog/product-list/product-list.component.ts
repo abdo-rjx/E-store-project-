@@ -1,6 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { ApiService } from '../../../core/services/api.service';
@@ -11,61 +11,29 @@ interface CategorySection {
   heroMedia: { type: 'video' | 'image'; src: string } | null;
   newArrivals: Product[];
   remaining: Product[];
+  carouselAnimating: boolean;
 }
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, ProductCardComponent],
+  imports: [CommonModule, ProductCardComponent],
   template: `
-    <!-- EDITORIAL HERO -->
-    <section class="page-hero">
-      <div class="hero-atmosphere">
-        <div class="hero-orb hero-orb--warm"></div>
-        <div class="hero-orb hero-orb--cool"></div>
-      </div>
-      <div class="hero-inner container reveal">
-        <span class="hero-eyebrow">Discover Premium Tech</span>
-        <h1 class="hero-heading">
-          Next-Gen
-          <span class="heading-accent">Electronics.</span>
-        </h1>
-        <p class="hero-body">
-          Experience the pinnacle of hardware design. Crafted with precision,
-          engineered for performance.
-        </p>
-      </div>
-    </section>
-
-    @if (loading) {
-      <div class="container">
-        <div class="skel-grid">
-          @for (i of [1,2,3,4,5,6]; track i) {
-            <div class="ghost-card">
-              <div class="ghost ghost-img"></div>
-              <div class="ghost-body">
-                <div class="ghost ghost-sm"></div>
-                <div class="ghost ghost-md"></div>
-                <div class="ghost ghost-lg"></div>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    } @else {
+    @if (sections.length > 0) {
       @for (section of sections; track section.category.id; let last = $last) {
         <section class="cat-section">
 
           <!-- Category heading -->
-          <div class="container">
+          <div class="cat-heading-wrap">
             <h2 class="cat-heading">{{ section.category.name }}</h2>
           </div>
 
           <!-- Hero banner -->
-          @if (section.heroMedia) {
+          @if (section.heroMedia && section.heroMedia.src && !failedVideos.has(section.heroMedia.src)) {
             @if (section.heroMedia.type === 'video') {
               <div class="cat-hero">
-                <video [src]="section.heroMedia.src" autoplay loop muted [muted]="true" playsinline class="cat-hero-video"></video>
+                <video [src]="section.heroMedia.src" autoplay loop muted [muted]="true" playsinline class="cat-hero-video"
+                       (error)="failedVideos.add(section.heroMedia.src)"></video>
               </div>
             } @else {
               <div class="cat-hero">
@@ -76,28 +44,38 @@ interface CategorySection {
 
           <div class="container">
 
-            <!-- New arrivals row -->
+            <!-- New arrivals carousel -->
             @if (section.newArrivals.length > 0) {
-              <div class="cat-new-row">
-                @for (product of section.newArrivals; track product.id) {
-                  <a [routerLink]="['/products', product.id]" class="cat-new-card">
-                    <div class="cat-new-media">
-                      @if (product.imagePaths && product.imagePaths.length >= 2) {
-                        <div class="cat-new-duo">
-                          <img [src]="product.imagePaths[0]" [alt]="product.name" class="cat-new-img">
-                          <img [src]="product.imagePaths[1]" [alt]="product.name" class="cat-new-img">
-                        </div>
-                      } @else {
-                        <img [src]="product.imageUrl" [alt]="product.name" class="cat-new-single">
-                      }
-                      <div class="cat-new-badge">New</div>
+              <div class="carousel-outer">
+                <div class="carousel-inner"
+                     [style.transform]="section.carouselAnimating ? 'translateX(-450px)' : 'translateX(0)'"
+                     [style.transition]="section.carouselAnimating ? 'transform 0.5s ease-in-out' : 'none'">
+                  @for (product of section.newArrivals; track product.id) {
+                    <div class="carousel-card" (click)="goToProduct(product.id)">
+                      <div class="carousel-card-media">
+                        @if (product.imagePaths && product.imagePaths.length >= 2) {
+                          <div class="carousel-card-duo">
+                            <img [src]="product.imagePaths[0]" [alt]="product.name" class="carousel-card-img">
+                            <img [src]="product.imagePaths[1]" [alt]="product.name" class="carousel-card-img">
+                          </div>
+                        } @else {
+                          <img [src]="product.imageUrl" [alt]="product.name" class="carousel-card-single">
+                        }
+                        <div class="carousel-card-badge">New</div>
+                      </div>
+                      <div class="carousel-card-info">
+                        <span class="carousel-card-name">{{ product.name }}</span>
+                        <span class="carousel-card-price">\${{ product.price | number:'1.2-2' }}</span>
+                      </div>
                     </div>
-                    <div class="cat-new-info">
-                      <h3 class="cat-new-name">{{ product.name }}</h3>
-                      <span class="cat-new-price">\${{ product.price | number:'1.2-2' }}</span>
-                    </div>
-                  </a>
-                }
+                  }
+                </div>
+              </div>
+              <div class="show-more-wrap">
+                <button class="show-more-btn" (click)="goToCategoryPage(section.category.name)">
+                  Show More
+                  <span class="material-icons">arrow_forward</span>
+                </button>
               </div>
             }
 
@@ -117,95 +95,14 @@ interface CategorySection {
           <div class="cat-sep"></div>
         }
       }
+    } @else {
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <span>Loading products...</span>
+      </div>
     }
   `,
   styles: [`
-    /* HERO */
-    .page-hero {
-      position: relative;
-      min-height: 50vh;
-      display: flex;
-      align-items: center;
-      padding: 48px 0;
-      overflow: hidden;
-    }
-
-    .hero-atmosphere {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    .hero-orb {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(140px);
-    }
-
-    .hero-orb--warm {
-      width: 520px;
-      height: 520px;
-      background: var(--accent-primary);
-      top: -120px;
-      right: -80px;
-      opacity: 0.1;
-    }
-
-    .hero-orb--cool {
-      width: 380px;
-      height: 380px;
-      background: var(--accent-coral);
-      bottom: -60px;
-      left: -100px;
-      opacity: 0.07;
-    }
-
-    .hero-inner {
-      position: relative;
-      z-index: 1;
-      max-width: 660px;
-    }
-
-    .hero-eyebrow {
-      display: inline-block;
-      padding: 5px 14px;
-      background: var(--accent-primary-glow);
-      border: 1px solid var(--border-accent);
-      border-radius: var(--radius-pill);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      color: var(--accent-primary);
-      margin-bottom: 20px;
-      text-transform: uppercase;
-    }
-
-    .hero-heading {
-      font-family: 'Playfair Display', serif;
-      font-size: clamp(2.5rem, 7vw, 4.2rem);
-      font-weight: 700;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      margin-bottom: 20px;
-      color: var(--text-primary);
-    }
-
-    .heading-accent {
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .hero-body {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1.05rem;
-      color: var(--text-secondary);
-      line-height: 1.75;
-      max-width: 500px;
-    }
-
     /* Skeleton */
     .skel-grid {
       display: grid;
@@ -239,7 +136,13 @@ interface CategorySection {
 
     /* Category section */
     .cat-section {
-      padding: 48px 0 0;
+      padding: 0;
+    }
+
+    .cat-heading-wrap {
+      padding: 24px 0;
+      text-align: center;
+      width: 100%;
     }
 
     .cat-heading {
@@ -247,8 +150,8 @@ interface CategorySection {
       font-size: clamp(2.8rem, 6vw, 4rem);
       font-weight: 700;
       letter-spacing: -0.03em;
-      color: var(--text-primary);
-      margin-bottom: 32px;
+      color: var(--accent-primary);
+      margin: 0;
       line-height: 1.1;
     }
 
@@ -277,40 +180,44 @@ interface CategorySection {
       display: block;
     }
 
-    /* New arrivals row */
-    .cat-new-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 24px;
-      margin-bottom: 48px;
+    /* New arrivals carousel */
+    .carousel-outer {
+      overflow: hidden;
+      width: 1350px;
+      max-width: 100%;
+      margin: 0 auto 0;
     }
 
-    .cat-new-card {
-      text-decoration: none;
-      color: inherit;
+    .carousel-inner {
       display: flex;
-      flex-direction: column;
-      border-radius: var(--radius-lg);
+      width: fit-content;
+      gap: 16px;
+    }
+
+    .carousel-card {
+      width: 450px;
+      flex-shrink: 0;
+      border-radius: 12px;
       overflow: hidden;
       background: var(--bg-card);
       border: 1px solid var(--border-primary);
-      transition: transform 0.3s ease, box-shadow 0.4s ease;
+      cursor: pointer;
+      transition: box-shadow 0.3s ease;
     }
 
-    .cat-new-card:hover {
-      transform: translateY(-4px);
+    .carousel-card:hover {
       box-shadow: var(--shadow-float);
     }
 
-    .cat-new-media {
+    .carousel-card-media {
       position: relative;
       width: 100%;
-      height: 320px;
+      height: 200px;
       overflow: hidden;
       background: var(--bg-secondary);
     }
 
-    .cat-new-duo {
+    .carousel-card-duo {
       display: flex;
       flex-direction: row;
       align-items: center;
@@ -319,30 +226,20 @@ interface CategorySection {
       height: 100%;
     }
 
-    .cat-new-img {
+    .carousel-card-img {
       width: 50%;
       height: 100%;
       object-fit: contain;
-      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .cat-new-card:hover .cat-new-img {
-      transform: scale(1.1);
-    }
-
-    .cat-new-single {
+    .carousel-card-single {
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
-      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    .cat-new-card:hover .cat-new-single {
-      transform: scale(1.1);
-    }
-
-    .cat-new-badge {
+    .carousel-card-badge {
       position: absolute;
       top: 12px;
       right: 12px;
@@ -359,28 +256,61 @@ interface CategorySection {
       box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
-    .cat-new-info {
+    .carousel-card-info {
       padding: 20px;
       display: flex;
       flex-direction: column;
       gap: 6px;
     }
 
-    .cat-new-name {
+    .carousel-card-name {
       font-family: 'DM Sans', sans-serif;
       font-size: 16px;
       font-weight: 600;
       color: var(--text-primary);
       margin: 0;
       line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .cat-new-price {
+    .carousel-card-price {
       font-family: 'Playfair Display', serif;
       font-size: 20px;
       font-weight: 700;
-      color: var(--text-primary);
+      color: var(--accent-primary);
       letter-spacing: -0.01em;
+    }
+
+    .show-more-wrap {
+      text-align: center;
+      padding: 20px 0 48px;
+    }
+
+    .show-more-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 28px;
+      border: 2px solid var(--accent-primary);
+      border-radius: var(--radius-pill);
+      background: transparent;
+      color: var(--accent-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .show-more-btn:hover {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    .show-more-btn .material-icons {
+      font-size: 18px;
     }
 
     /* Regular grid */
@@ -399,17 +329,33 @@ interface CategorySection {
       background: var(--border-primary);
     }
 
+    /* Loading spinner */
+    .loading-spinner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 80px 0;
+      color: var(--text-tertiary);
+      font-size: 14px;
+    }
+
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-primary);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
-      .page-hero {
-        min-height: 40vh;
-        padding: 24px 0;
-      }
-
-      .hero-heading {
-        font-size: 2.2rem;
-      }
-
       .cat-hero {
         height: 300px;
       }
@@ -428,14 +374,24 @@ interface CategorySection {
     }
   `]
 })
-export class ProductListComponent implements OnInit {
+export class ProductListComponent implements OnInit, OnDestroy {
   loading = true;
   sections: CategorySection[] = [];
+  failedVideos = new Set<string>();
+  private carouselTimers = new Map<number, ReturnType<typeof setInterval>>();
 
   constructor(
     private api: ApiService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
+
+  ngOnDestroy(): void {
+    for (const timer of this.carouselTimers.values()) {
+      clearInterval(timer);
+    }
+    this.carouselTimers.clear();
+  }
 
   ngOnInit(): void {
     this.api.getCategories().subscribe({
@@ -445,6 +401,7 @@ export class ProductListComponent implements OnInit {
           next: (res) => {
             const allProducts = res.data;
             this.buildSections(categories, allProducts);
+            this.startCarousels();
             this.loading = false;
           },
           error: () => {
@@ -458,6 +415,34 @@ export class ProductListComponent implements OnInit {
         this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 });
       }
     });
+  }
+
+  goToProduct(id: number): void {
+    this.router.navigate(['/products', id]);
+  }
+
+  goToCategoryPage(categoryName: string): void {
+    this.router.navigate(['/shop/category', categoryName]);
+  }
+
+  private startCarousels(): void {
+    for (const section of this.sections) {
+      const id = section.category.id;
+      this.carouselTimers.set(id, setInterval(() => {
+        this.tickCarousel(section);
+      }, 6000));
+    }
+  }
+
+  private tickCarousel(section: CategorySection): void {
+    section.carouselAnimating = true;
+    setTimeout(() => {
+      const items = [...section.newArrivals];
+      const first = items.shift()!;
+      items.push(first);
+      section.newArrivals = items;
+      section.carouselAnimating = false;
+    }, 500);
   }
 
   private buildSections(categories: Category[], products: Product[]): void {
@@ -476,8 +461,11 @@ export class ProductListComponent implements OnInit {
         const catProducts = grouped.get(cat.id) || [];
         if (catProducts.length === 0) return null;
 
-        const newArrivals = catProducts.slice(0, 3);
-        const remaining = catProducts.slice(3);
+        const topProducts = catProducts.slice(0, 5);
+        const carouselItems = topProducts.length < 5
+          ? Array.from({ length: 5 }, (_, i) => topProducts[i % topProducts.length])
+          : [...topProducts];
+        const remaining = catProducts.slice(5);
 
         const heroProduct = catProducts.find(p => p.videoPath) || catProducts[0];
         let heroMedia: { type: 'video' | 'image'; src: string } | null = null;
@@ -487,7 +475,7 @@ export class ProductListComponent implements OnInit {
           heroMedia = { type: 'image', src: heroProduct.imageUrl };
         }
 
-        return { category: cat, heroMedia, newArrivals, remaining };
+        return { category: cat, heroMedia, newArrivals: carouselItems, remaining, carouselAnimating: false };
       })
       .filter((s): s is CategorySection => s !== null);
   }

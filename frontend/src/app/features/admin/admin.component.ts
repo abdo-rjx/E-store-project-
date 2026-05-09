@@ -309,12 +309,29 @@ export class AdminComponent implements OnInit {
           </div>
           <div class="es-input-group">
             <label>Category</label>
-            <select class="es-input" [(ngModel)]="form.categoryId">
-              <option [ngValue]="null" disabled>Select a category</option>
-              @for (cat of categories; track cat.id) {
-                <option [ngValue]="cat.id">{{ cat.name }}</option>
-              }
-            </select>
+            <div class="category-select-wrap">
+              <select class="es-input" [(ngModel)]="form.categoryId">
+                <option [ngValue]="null" disabled>Select a category</option>
+                @for (cat of categories; track cat.id) {
+                  <option [ngValue]="cat.id">{{ cat.name }}</option>
+                }
+              </select>
+              <button type="button" class="es-btn-icon add-cat-btn" (click)="showNewCategoryInput = true" title="Create new category">
+                <span class="material-icons">add</span>
+              </button>
+            </div>
+            @if (showNewCategoryInput) {
+              <div class="new-category-row">
+                <input type="text" class="es-input" [(ngModel)]="newCategoryName" placeholder="New category name"
+                       (keyup.enter)="createCategory()" (keyup.escape)="cancelNewCategory()">
+                <button type="button" class="es-btn-icon confirm-cat-btn" (click)="createCategory()" [disabled]="!newCategoryName.trim()" title="Create">
+                  <span class="material-icons">check</span>
+                </button>
+                <button type="button" class="es-btn-icon cancel-cat-btn" (click)="cancelNewCategory()" title="Cancel">
+                  <span class="material-icons">close</span>
+                </button>
+              </div>
+            }
           </div>
           <div class="es-input-group full-span">
             <label>Description</label>
@@ -548,6 +565,57 @@ export class AdminComponent implements OnInit {
       font-weight: 500;
     }
     .upload-error-msg .material-icons { font-size: 18px; }
+    .category-select-wrap { display: flex; gap: 8px; align-items: center; }
+    .category-select-wrap select { flex: 1; }
+    .add-cat-btn {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-primary);
+      background: var(--bg-card);
+      color: var(--accent-primary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+    .add-cat-btn:hover {
+      background: var(--accent-primary-glow);
+      border-color: var(--accent-primary);
+    }
+    .new-category-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .new-category-row input { flex: 1; }
+    .confirm-cat-btn, .cancel-cat-btn {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .confirm-cat-btn {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+    .confirm-cat-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .confirm-cat-btn:hover:not(:disabled) { opacity: 0.9; }
+    .cancel-cat-btn {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-primary);
+    }
+    .cancel-cat-btn:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
     .es-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   `],
   imports: [CommonModule, MatDialogModule, FormsModule, MatSnackBarModule],
@@ -565,6 +633,9 @@ export class ProductFormDialogComponent {
   imageFiles: File[] = [];
   imagePreviews: string[] = [];
 
+  newCategoryName = '';
+  showNewCategoryInput = false;
+
   private static readonly MAX_VIDEO_SIZE = 50 * 1024 * 1024;
   private static readonly MAX_IMAGE_SIZE = 5 * 1024 * 1024;
   private static readonly ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/webm', 'video/ogg'];
@@ -579,6 +650,28 @@ export class ProductFormDialogComponent {
     this.isEdit = !!this.data.product.id;
     this.form = { ...this.data.product };
     this.categories = this.data.categories || [];
+  }
+
+  createCategory(): void {
+    const name = this.newCategoryName.trim();
+    if (!name) return;
+    this.api.createCategory({ name }).subscribe({
+      next: (res) => {
+        this.categories.push(res.data);
+        this.form.categoryId = res.data.id;
+        this.newCategoryName = '';
+        this.showNewCategoryInput = false;
+        this.snackBar.open('Category created', 'Close', { duration: 3000 });
+      },
+      error: (err) => {
+        this.snackBar.open(err.error?.message || 'Failed to create category', 'Close', { duration: 5000 });
+      }
+    });
+  }
+
+  cancelNewCategory(): void {
+    this.newCategoryName = '';
+    this.showNewCategoryInput = false;
   }
 
   onDragOver(event: DragEvent) {
