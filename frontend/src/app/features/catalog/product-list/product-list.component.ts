@@ -1,25 +1,30 @@
-import { Component, OnInit, AfterViewInit, ElementRef, QueryList, ViewChildren } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { ApiService } from '../../../core/services/api.service';
-import { Product, Category, PageResponse } from '../../../core/models';
+import { Product, Category } from '../../../core/models';
+
+interface CategorySection {
+  category: Category;
+  heroMedia: { type: 'video' | 'image'; src: string } | null;
+  newArrivals: Product[];
+  remaining: Product[];
+}
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatPaginatorModule, ProductCardComponent],
+  imports: [CommonModule, RouterLink, ProductCardComponent],
   template: `
-    <div class="container">
     <!-- EDITORIAL HERO -->
     <section class="page-hero">
       <div class="hero-atmosphere">
         <div class="hero-orb hero-orb--warm"></div>
         <div class="hero-orb hero-orb--cool"></div>
       </div>
-      <div class="hero-inner reveal">
+      <div class="hero-inner container reveal">
         <span class="hero-eyebrow">Discover Premium Tech</span>
         <h1 class="hero-heading">
           Next-Gen
@@ -29,63 +34,12 @@ import { Product, Category, PageResponse } from '../../../core/models';
           Experience the pinnacle of hardware design. Crafted with precision,
           engineered for performance.
         </p>
-        <div class="hero-cta">
-          <a href="#catalog" class="btn-primary-lg">
-            Browse Catalog
-            <span class="material-icons">arrow_downward</span>
-          </a>
-          <button class="btn-secondary-lg" (click)="scrollToSearch()">
-            <span class="material-icons">search</span>
-            Search
-          </button>
-        </div>
-        <div class="hero-stats">
-          <div class="stat">
-            <span class="stat-val">500+</span>
-            <span class="stat-tag">Products</span>
-          </div>
-          <div class="stat-sep"></div>
-          <div class="stat">
-            <span class="stat-val">24/7</span>
-            <span class="stat-tag">Support</span>
-          </div>
-          <div class="stat-sep"></div>
-          <div class="stat">
-            <span class="stat-val">Free</span>
-            <span class="stat-tag">Shipping</span>
-          </div>
-        </div>
       </div>
     </section>
 
-    <!-- CATALOG -->
-    <section id="catalog" class="catalog">
-      <!-- Filters -->
-      <div class="filter-bar reveal" #searchArea>
-        <div class="filter-search">
-          <span class="material-icons">search</span>
-          <input type="text" class="es-input"
-                 [(ngModel)]="searchTerm"
-                 (ngModelChange)="onSearch()"
-                 placeholder="Search products...">
-        </div>
-        <div class="filter-chips">
-          <button class="chip" [class.is-active]="selectedCategory === null"
-                  (click)="selectedCategory = null; onSearch()">
-            All
-          </button>
-          @for (cat of categories; track cat.id) {
-            <button class="chip" [class.is-active]="selectedCategory === cat.id"
-                    (click)="selectedCategory = cat.id; onSearch()">
-              {{ cat.name }}
-            </button>
-          }
-        </div>
-      </div>
-
-      <!-- Grid -->
-      @if (loading) {
-        <div class="grid">
+    @if (loading) {
+      <div class="container">
+        <div class="skel-grid">
           @for (i of [1,2,3,4,5,6]; track i) {
             <div class="ghost-card">
               <div class="ghost ghost-img"></div>
@@ -97,40 +51,79 @@ import { Product, Category, PageResponse } from '../../../core/models';
             </div>
           }
         </div>
-      } @else if (products.length === 0) {
-        <div class="empty reveal">
-          <span class="material-icons empty-icon">inventory_2</span>
-          <h3>No products found</h3>
-          <p>Try adjusting your search or filter criteria.</p>
-        </div>
-      } @else {
-        <div class="grid">
-          @for (product of products; track product.id; let i = $index) {
-            <div class="reveal" [style.transition-delay]="(i % 6) * 80 + 'ms'" #productCards>
-              <app-product-card [product]="product"></app-product-card>
-            </div>
-          }
-        </div>
+      </div>
+    } @else {
+      @for (section of sections; track section.category.id; let last = $last) {
+        <section class="cat-section">
 
-        @if (pageResponse) {
-          <mat-paginator
-            [length]="pageResponse.totalElements"
-            [pageSize]="pageSize"
-            [pageSizeOptions]="[6, 12, 24]"
-            [pageIndex]="currentPage"
-            (page)="onPageChange($event)"
-            class="pager">
-          </mat-paginator>
+          <!-- Category heading -->
+          <div class="container">
+            <h2 class="cat-heading">{{ section.category.name }}</h2>
+          </div>
+
+          <!-- Hero banner -->
+          @if (section.heroMedia) {
+            @if (section.heroMedia.type === 'video') {
+              <div class="cat-hero">
+                <video [src]="section.heroMedia.src" autoplay loop muted [muted]="true" playsinline class="cat-hero-video"></video>
+              </div>
+            } @else {
+              <div class="cat-hero">
+                <img [src]="section.heroMedia.src" class="cat-hero-img">
+              </div>
+            }
+          }
+
+          <div class="container">
+
+            <!-- New arrivals row -->
+            @if (section.newArrivals.length > 0) {
+              <div class="cat-new-row">
+                @for (product of section.newArrivals; track product.id) {
+                  <a [routerLink]="['/products', product.id]" class="cat-new-card">
+                    <div class="cat-new-media">
+                      @if (product.imagePaths && product.imagePaths.length >= 2) {
+                        <div class="cat-new-duo">
+                          <img [src]="product.imagePaths[0]" [alt]="product.name" class="cat-new-img">
+                          <img [src]="product.imagePaths[1]" [alt]="product.name" class="cat-new-img">
+                        </div>
+                      } @else {
+                        <img [src]="product.imageUrl" [alt]="product.name" class="cat-new-single">
+                      }
+                      <div class="cat-new-badge">New</div>
+                    </div>
+                    <div class="cat-new-info">
+                      <h3 class="cat-new-name">{{ product.name }}</h3>
+                      <span class="cat-new-price">\${{ product.price | number:'1.2-2' }}</span>
+                    </div>
+                  </a>
+                }
+              </div>
+            }
+
+            <!-- Regular grid -->
+            @if (section.remaining.length > 0) {
+              <div class="cat-grid">
+                @for (product of section.remaining; track product.id) {
+                  <app-product-card [product]="product"></app-product-card>
+                }
+              </div>
+            }
+
+          </div>
+        </section>
+
+        @if (!last) {
+          <div class="cat-sep"></div>
         }
       }
-    </section>
-    </div>
+    }
   `,
   styles: [`
     /* HERO */
     .page-hero {
       position: relative;
-      min-height: 68vh;
+      min-height: 50vh;
       display: flex;
       align-items: center;
       padding: 48px 0;
@@ -211,171 +204,16 @@ import { Product, Category, PageResponse } from '../../../core/models';
       color: var(--text-secondary);
       line-height: 1.75;
       max-width: 500px;
-      margin-bottom: 36px;
-    }
-
-    .hero-cta {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 52px;
-    }
-
-    .btn-primary-lg {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 32px;
-      border-radius: var(--radius-pill);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 600;
-      background: var(--accent-gradient);
-      color: #fff;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 4px 20px var(--accent-primary-glow);
-      transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .btn-primary-lg:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 32px var(--accent-primary-glow);
-    }
-
-    .btn-primary-lg .material-icons { font-size: 18px; }
-
-    .btn-secondary-lg {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: var(--radius-pill);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 500;
-      background: transparent;
-      color: var(--text-primary);
-      border: 1px solid var(--border-secondary);
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-secondary-lg:hover {
-      border-color: var(--accent-primary);
-      color: var(--accent-primary);
-      background: var(--accent-primary-glow);
-    }
-
-    .btn-secondary-lg .material-icons { font-size: 18px; }
-
-    .hero-stats {
-      display: flex;
-      align-items: center;
-      gap: 28px;
-    }
-
-    .stat {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .stat-val {
-      font-family: 'Playfair Display', serif;
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--text-primary);
-      letter-spacing: -0.02em;
-    }
-
-    .stat-tag {
-      font-family: 'DM Sans', sans-serif;
-      font-size: 11px;
-      color: var(--text-tertiary);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .stat-sep {
-      width: 1px;
-      height: 36px;
-      background: var(--border-secondary);
-    }
-
-    /* CATALOG */
-    .catalog {
-      padding: 48px 0 24px;
-    }
-
-    /* Filter bar */
-    .filter-bar {
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-      margin-bottom: 36px;
-    }
-
-    .filter-search {
-      position: relative;
-      max-width: 460px;
-    }
-
-    .filter-search .material-icons {
-      position: absolute;
-      left: 16px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-tertiary);
-      font-size: 20px;
-      z-index: 1;
-    }
-
-    .filter-search .es-input {
-      padding-left: 48px !important;
-    }
-
-    .filter-chips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .chip {
-      padding: 8px 20px;
-      border-radius: var(--radius-pill);
-      background: var(--bg-card);
-      border: 1px solid var(--border-primary);
-      color: var(--text-secondary);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-    }
-
-    .chip:hover {
-      border-color: var(--accent-primary);
-      color: var(--accent-primary);
-      transform: translateY(-1px);
-    }
-
-    .chip.is-active {
-      background: var(--accent-gradient);
-      border-color: transparent;
-      color: #fff;
-      box-shadow: 0 2px 12px var(--accent-primary-glow);
-    }
-
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 24px;
     }
 
     /* Skeleton */
+    .skel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 24px;
+      padding: 48px 0;
+    }
+
     .ghost-card {
       background: var(--bg-card);
       border: 1px solid var(--border-primary);
@@ -399,39 +237,172 @@ import { Product, Category, PageResponse } from '../../../core/models';
     .ghost-md { height: 18px; width: 70%; }
     .ghost-lg { height: 14px; width: 50%; }
 
-    /* Empty */
-    .empty {
-      text-align: center;
-      padding: 80px 20px;
+    /* Category section */
+    .cat-section {
+      padding: 48px 0 0;
     }
 
-    .empty-icon {
-      font-size: 60px;
-      color: var(--text-tertiary);
-      margin-bottom: 16px;
+    .cat-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 6vw, 4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin-bottom: 32px;
+      line-height: 1.1;
     }
 
-    .empty h3 {
-      margin-bottom: 8px;
+    /* Hero banner */
+    .cat-hero {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      height: 450px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+      margin-bottom: 48px;
+    }
+
+    .cat-hero-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+    }
+
+    .cat-hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* New arrivals row */
+    .cat-new-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 24px;
+      margin-bottom: 48px;
+    }
+
+    .cat-new-card {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      transition: transform 0.3s ease, box-shadow 0.4s ease;
+    }
+
+    .cat-new-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-float);
+    }
+
+    .cat-new-media {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .cat-new-duo {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .cat-new-img {
+      width: 50%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .cat-new-card:hover .cat-new-img {
+      transform: scale(1.1);
+    }
+
+    .cat-new-single {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .cat-new-card:hover .cat-new-single {
+      transform: scale(1.1);
+    }
+
+    .cat-new-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      padding: 4px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--accent-gradient);
+      color: #fff;
       font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      z-index: 2;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
 
-    .empty p {
-      color: var(--text-secondary);
+    .cat-new-info {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cat-new-name {
       font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.35;
     }
 
-    /* Pager */
-    .pager {
-      margin-top: 40px;
-      background: transparent !important;
-      border-radius: var(--radius-md);
+    .cat-new-price {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    /* Regular grid */
+    .cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      padding-bottom: 48px;
+    }
+
+    /* Separator */
+    .cat-sep {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      height: 1px;
+      background: var(--border-primary);
     }
 
     /* Responsive */
     @media (max-width: 768px) {
       .page-hero {
-        min-height: 50vh;
+        min-height: 40vh;
         padding: 24px 0;
       }
 
@@ -439,111 +410,85 @@ import { Product, Category, PageResponse } from '../../../core/models';
         font-size: 2.2rem;
       }
 
-      .hero-stats {
-        gap: 16px;
+      .cat-hero {
+        height: 300px;
       }
 
-      .stat-val {
-        font-size: 1.2rem;
+      .cat-new-row {
+        grid-template-columns: 1fr;
       }
 
-      .grid {
+      .cat-new-media {
+        height: 240px;
+      }
+
+      .cat-grid {
         grid-template-columns: 1fr;
       }
     }
   `]
 })
-export class ProductListComponent implements OnInit, AfterViewInit {
-  products: Product[] = [];
-  categories: Category[] = [];
-  searchTerm = '';
-  selectedCategory: number | null = null;
+export class ProductListComponent implements OnInit {
   loading = true;
+  sections: CategorySection[] = [];
 
-  pageResponse: PageResponse<Product> | null = null;
-  currentPage = 0;
-  pageSize = 12;
-
-  @ViewChildren('productCards') productCards!: QueryList<ElementRef>;
-
-  private observer!: IntersectionObserver;
-
-  constructor(private api: ApiService, private snackBar: MatSnackBar) {}
+  constructor(
+    private api: ApiService,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadProducts();
-    this.setupScrollReveal();
-  }
-
-  ngAfterViewInit(): void {
-    this.productCards.changes.subscribe(() => this.observeCards());
-    setTimeout(() => this.observeCards(), 100);
-  }
-
-  private setupScrollReveal(): void {
-    this.observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
-          } else {
-            entry.target.classList.remove('revealed');
+    this.api.getCategories().subscribe({
+      next: (cats) => {
+        const categories = cats.data;
+        this.api.getProducts().subscribe({
+          next: (res) => {
+            const allProducts = res.data;
+            this.buildSections(categories, allProducts);
+            this.loading = false;
+          },
+          error: () => {
+            this.loading = false;
+            this.snackBar.open('Failed to load products', 'Close', { duration: 3000 });
           }
         });
       },
-      { threshold: 0.1, rootMargin: '0px 0px -10% 0px' }
-    );
-
-    setTimeout(() => {
-      document.querySelectorAll('.reveal').forEach(el => {
-        this.observer.observe(el);
-      });
-    }, 50);
-  }
-
-  private observeCards(): void {
-    this.productCards?.forEach(card => {
-      const el = card.nativeElement;
-      this.observer.observe(el);
-    });
-  }
-
-  loadCategories(): void {
-    this.api.getCategories().subscribe({
-      next: (res) => { this.categories = res.data; },
-      error: () => this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 })
-    });
-  }
-
-  loadProducts(): void {
-    this.loading = true;
-    this.api.getProductsPaginated(this.currentPage, this.pageSize, this.searchTerm || undefined, this.selectedCategory || undefined).subscribe({
-      next: (res) => {
-        this.pageResponse = res.data;
-        this.products = res.data.content;
-        this.loading = false;
-      },
       error: () => {
         this.loading = false;
-        this.snackBar.open('Failed to load products', 'Close', { duration: 3000 });
+        this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 });
       }
     });
   }
 
-  onPageChange(event: PageEvent): void {
-    this.currentPage = event.pageIndex;
-    this.pageSize = event.pageSize;
-    this.loadProducts();
-    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
-  }
+  private buildSections(categories: Category[], products: Product[]): void {
+    const grouped = new Map<number, Product[]>();
+    for (const p of products) {
+      const list = grouped.get(p.categoryId) || [];
+      list.push(p);
+      grouped.set(p.categoryId, list);
+    }
+    for (const [, list] of grouped) {
+      list.sort((a, b) => b.id - a.id);
+    }
 
-  onSearch(): void {
-    this.currentPage = 0;
-    this.loadProducts();
-  }
+    this.sections = categories
+      .map(cat => {
+        const catProducts = grouped.get(cat.id) || [];
+        if (catProducts.length === 0) return null;
 
-  scrollToSearch(): void {
-    document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth' });
+        const newArrivals = catProducts.slice(0, 3);
+        const remaining = catProducts.slice(3);
+
+        const heroProduct = catProducts.find(p => p.videoPath) || catProducts[0];
+        let heroMedia: { type: 'video' | 'image'; src: string } | null = null;
+        if (heroProduct?.videoPath) {
+          heroMedia = { type: 'video', src: heroProduct.videoPath };
+        } else if (heroProduct?.imageUrl) {
+          heroMedia = { type: 'image', src: heroProduct.imageUrl };
+        }
+
+        return { category: cat, heroMedia, newArrivals, remaining };
+      })
+      .filter((s): s is CategorySection => s !== null);
   }
 }
