@@ -61,9 +61,9 @@ public class DataInitializer implements CommandLineRunner {
         User user1 = createUser("Omar", "Zahour", "omar@test.com", "USER");
         User user2 = createUser("Fatima", "Alami", "fatima@test.com", "USER");
 
-        Category electronics = createCategory("Electronics", "Phones, laptops, and gadgets");
-        Category books = createCategory("Books", "Technical and fiction books");
-        Category clothing = createCategory("Clothing", "Men and women fashion");
+        Category electronics = createCategory("Electronic Devices", "Smartphones, laptops, and gadgets");
+        Category books = createCategory("Electronic House", "Smart home and household electronics");
+        Category clothing = createCategory("Equipment", "Professional tools and equipment");
 
         Product p1 = createProduct("iPhone 15", 999.99, "Latest Apple smartphone with advanced camera", "https://placehold.co/300x300/1a1a2e/ffffff?text=iPhone", electronics, 25);
         Product p2 = createProduct("Samsung Galaxy S24", 899.99, "Samsung flagship with AI features", "https://placehold.co/300x300/16213e/ffffff?text=Galaxy", electronics, 30);
