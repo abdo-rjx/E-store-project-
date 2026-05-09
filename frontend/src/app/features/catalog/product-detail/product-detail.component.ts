@@ -13,12 +13,6 @@ import { Product, Review } from '../../../core/models';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     @if (product) {
-      @if (product.videoPath) {
-        <div class="hero-video-wrap">
-          <video [src]="product.videoPath" autoplay loop muted playsinline class="hero-video"></video>
-        </div>
-      }
-
       <div class="container">
       <!-- Breadcrumb -->
       <nav class="crumb">
@@ -42,6 +36,11 @@ import { Product, Review } from '../../../core/models';
               <div class="media-tag media-tag--out">Sold Out</div>
             }
           </div>
+          @if (product.videoPath) {
+            <div class="media-video">
+              <video [src]="product.videoPath" autoplay loop muted [muted]="true" playsinline class="media-video-player"></video>
+            </div>
+          }
         </section>
 
         <!-- Info side -->
@@ -183,23 +182,6 @@ import { Product, Review } from '../../../core/models';
     }
   `,
   styles: [`
-    /* HERO VIDEO */
-    .hero-video-wrap {
-      width: 100vw;
-      margin-left: calc(-50vw + 50%);
-      height: 560px;
-      overflow: hidden;
-      background: var(--bg-secondary);
-    }
-
-    .hero-video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      pointer-events: none;
-    }
-
     /* LOADER */
     .page-loader { padding: 48px 0; }
 
@@ -256,6 +238,22 @@ import { Product, Review } from '../../../core/models';
       aspect-ratio: 4 / 3;
       object-fit: cover;
       display: block;
+    }
+
+    .media-video {
+      margin-top: 14px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+    }
+
+    .media-video-player {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
     }
 
     .media-tag {

@@ -15,8 +15,17 @@ import { Product } from '../../../core/models';
                (mouseleave)="onLeave()"
                (mousemove)="onMove($event)">
         <div class="card-media">
-          <img [src]="product.imageUrl" [alt]="product.name" class="card-img"
-               onerror="this.src='https://placehold.co/400x300/1a1a2e/7C6FF7?text=E-Store'">
+          @if (product.imagePaths && product.imagePaths.length >= 2) {
+            <div class="card-img-duo">
+              <img [src]="product.imagePaths[0]" [alt]="product.name" class="card-img-duo-item"
+                   onerror="this.src='https://placehold.co/400x300/1a1a2e/7C6FF7?text=E-Store'">
+              <img [src]="product.imagePaths[1]" [alt]="product.name" class="card-img-duo-item"
+                   onerror="this.src='https://placehold.co/400x300/1a1a2e/7C6FF7?text=E-Store'">
+            </div>
+          } @else {
+            <img [src]="product.imageUrl" [alt]="product.name" class="card-img"
+                 onerror="this.src='https://placehold.co/400x300/1a1a2e/7C6FF7?text=E-Store'">
+          }
           <div class="card-shimmer"></div>
 
           @if (product.videoPath) {
@@ -104,6 +113,27 @@ import { Product } from '../../../core/models';
     }
 
     .product-card:hover .card-img {
+      transform: scale(1.1);
+    }
+
+    .card-img-duo {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 260px;
+      overflow: hidden;
+    }
+
+    .card-img-duo-item {
+      width: 50%;
+      height: 100%;
+      object-fit: contain;
+      transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .product-card:hover .card-img-duo-item {
       transform: scale(1.1);
     }
 
