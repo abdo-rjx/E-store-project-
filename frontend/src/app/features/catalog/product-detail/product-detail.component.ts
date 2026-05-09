@@ -12,26 +12,14 @@ import { Product, Review } from '../../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    @if (product?.videoPath) {
-      <div class="hero-video-wrap">
-        <video [src]="product.videoPath" autoplay loop muted playsinline class="hero-video"></video>
-      </div>
-    }
-
-    <div class="container">
-    @if (!product) {
-      <div class="page-loader">
-        <div class="loader-skeleton">
-          <div class="ghost ghost-visual"></div>
-          <div class="ghost-details">
-            <div class="ghost ghost-xs"></div>
-            <div class="ghost ghost-title"></div>
-            <div class="ghost ghost-sub"></div>
-            <div class="ghost ghost-desc"></div>
-          </div>
+    @if (product) {
+      @if (product.videoPath) {
+        <div class="hero-video-wrap">
+          <video [src]="product.videoPath" autoplay loop muted playsinline class="hero-video"></video>
         </div>
-      </div>
-    } @else {
+      }
+
+      <div class="container">
       <!-- Breadcrumb -->
       <nav class="crumb">
         <a routerLink="/products" class="crumb-link">
@@ -177,8 +165,22 @@ import { Product, Review } from '../../../core/models';
           </div>
         }
       </section>
-    }
     </div>
+    } @else {
+      <div class="container">
+        <div class="page-loader">
+          <div class="loader-skeleton">
+            <div class="ghost ghost-visual"></div>
+            <div class="ghost-details">
+              <div class="ghost ghost-xs"></div>
+              <div class="ghost ghost-title"></div>
+              <div class="ghost ghost-sub"></div>
+              <div class="ghost ghost-desc"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     /* HERO VIDEO */
