@@ -17,6 +17,7 @@ spring:
       path: /h2-console
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     show-sql: false
