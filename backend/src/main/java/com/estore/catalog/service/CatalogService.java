@@ -1,5 +1,6 @@
 package com.estore.catalog.service;
 
+import com.estore.billing.repository.OrderItemRepository;
 import com.estore.catalog.dto.CategoryDto;
 import com.estore.catalog.dto.ProductDto;
 import com.estore.catalog.entity.Category;
@@ -9,6 +10,7 @@ import com.estore.catalog.repository.ProductRepository;
 import com.estore.inventory.entity.Inventory;
 import com.estore.inventory.repository.InventoryRepository;
 import com.estore.shared.exception.ResourceNotFoundException;
+import com.estore.shopping.repository.CartItemRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,13 +27,19 @@ public class CatalogService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final InventoryRepository inventoryRepository;
+    private final CartItemRepository cartItemRepository;
+    private final OrderItemRepository orderItemRepository;
 
     public CatalogService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          InventoryRepository inventoryRepository) {
+                          InventoryRepository inventoryRepository,
+                          CartItemRepository cartItemRepository,
+                          OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.inventoryRepository = inventoryRepository;
+        this.cartItemRepository = cartItemRepository;
+        this.orderItemRepository = orderItemRepository;
     }
 
     public List<ProductDto> getAllProducts() {
@@ -146,6 +154,8 @@ public class CatalogService {
         if (!productRepository.existsById(id)) {
             throw new ResourceNotFoundException("Product not found: " + id);
         }
+        cartItemRepository.deleteByProductId(id);
+        orderItemRepository.deleteByProductId(id);
         productRepository.deleteById(id);
     }
 
