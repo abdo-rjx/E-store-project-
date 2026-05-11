@@ -4,6 +4,7 @@ import com.estore.review.dto.ReviewDto;
 import com.estore.review.service.ReviewService;
 import com.estore.shared.model.ApiResponse;
 import com.estore.shared.model.PageResponse;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reviews")
+@Profile("!dev")
 public class ReviewController {
 
     private final ReviewService reviewService;
