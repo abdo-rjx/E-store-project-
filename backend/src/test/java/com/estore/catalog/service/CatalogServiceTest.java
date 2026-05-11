@@ -5,8 +5,6 @@ import com.estore.catalog.entity.Category;
 import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.CategoryRepository;
 import com.estore.catalog.repository.ProductRepository;
-import com.estore.inventory.entity.Inventory;
-import com.estore.inventory.repository.InventoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,9 +32,6 @@ class CatalogServiceTest {
     @Mock
     private CategoryRepository categoryRepository;
 
-    @Mock
-    private InventoryRepository inventoryRepository;
-
     @InjectMocks
     private CatalogService catalogService;
 
@@ -59,14 +54,8 @@ class CatalogServiceTest {
                 .imageUrl("https://placehold.co/300x300")
                 .description("Latest iPhone")
                 .category(electronics)
+                .stock(25)
                 .build();
-
-        Inventory inv1 = Inventory.builder()
-                .id(1L)
-                .product(product1)
-                .quantity(25)
-                .build();
-        product1.setInventory(inv1);
 
         product2 = Product.builder()
                 .id(2L)
@@ -75,14 +64,8 @@ class CatalogServiceTest {
                 .imageUrl("https://placehold.co/300x300")
                 .description("Samsung phone")
                 .category(electronics)
+                .stock(30)
                 .build();
-
-        Inventory inv2 = Inventory.builder()
-                .id(2L)
-                .product(product2)
-                .quantity(30)
-                .build();
-        product2.setInventory(inv2);
     }
 
     @Test
@@ -147,7 +130,7 @@ class CatalogServiceTest {
         Page<Product> page = new PageImpl<>(List.of(product1, product2), pageable, 2);
         when(productRepository.findAll(pageable)).thenReturn(page);
 
-        var result = catalogService.searchProductsPaginated(null, null, pageable);
+        var result = catalogService.searchProductsPaginated(null, null, null, pageable);
 
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
@@ -160,7 +143,7 @@ class CatalogServiceTest {
         Page<Product> page = new PageImpl<>(List.of(product1), pageable, 1);
         when(productRepository.findByCategoryId(1L, pageable)).thenReturn(page);
 
-        var result = catalogService.searchProductsPaginated(null, 1L, pageable);
+        var result = catalogService.searchProductsPaginated(null, 1L, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findByCategoryId(1L, pageable);
@@ -173,7 +156,7 @@ class CatalogServiceTest {
         Page<Product> page = new PageImpl<>(List.of(product1), pageable, 1);
         when(productRepository.findByCategoryIdAndNameContainingIgnoreCase(1L, "iphone", pageable)).thenReturn(page);
 
-        var result = catalogService.searchProductsPaginated("iphone", 1L, pageable);
+        var result = catalogService.searchProductsPaginated("iphone", 1L, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
         verify(productRepository).findByCategoryIdAndNameContainingIgnoreCase(1L, "iphone", pageable);
@@ -199,7 +182,7 @@ class CatalogServiceTest {
     }
 
     @Test
-    void createProduct_shouldSaveProductAndCreateInventory() {
+    void createProduct_shouldSaveProduct() {
         ProductDto request = new ProductDto(null, "New Phone", 599.99, null, "A new phone", null, 1L, 10);
         Product savedProduct = Product.builder()
                 .id(10L)
@@ -207,25 +190,19 @@ class CatalogServiceTest {
                 .price(599.99)
                 .description("A new phone")
                 .category(electronics)
+                .stock(10)
                 .build();
-        Inventory savedInventory = Inventory.builder()
-                .id(10L)
-                .product(savedProduct)
-                .quantity(10)
-                .build();
-        savedProduct.setInventory(savedInventory);
 
         when(categoryRepository.findById(1L)).thenReturn(Optional.of(electronics));
         when(productRepository.save(any(Product.class))).thenReturn(savedProduct);
-        when(inventoryRepository.save(any(Inventory.class))).thenReturn(savedInventory);
 
         ProductDto result = catalogService.createProduct(request);
 
         assertThat(result).isNotNull();
         assertThat(result.name()).isEqualTo("New Phone");
         assertThat(result.price()).isEqualTo(599.99);
+        assertThat(result.stock()).isEqualTo(10);
         verify(productRepository).save(any(Product.class));
-        verify(inventoryRepository).save(any(Inventory.class));
     }
 
     @Test

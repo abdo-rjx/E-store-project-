@@ -7,8 +7,6 @@ import com.estore.catalog.entity.Category;
 import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.CategoryRepository;
 import com.estore.catalog.repository.ProductRepository;
-import com.estore.inventory.entity.Inventory;
-import com.estore.inventory.repository.InventoryRepository;
 import com.estore.shared.exception.ResourceNotFoundException;
 import com.estore.shopping.repository.CartItemRepository;
 import org.springframework.data.domain.Page;
@@ -26,18 +24,15 @@ public class CatalogService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final InventoryRepository inventoryRepository;
     private final CartItemRepository cartItemRepository;
     private final OrderItemRepository orderItemRepository;
 
     public CatalogService(ProductRepository productRepository,
                           CategoryRepository categoryRepository,
-                          InventoryRepository inventoryRepository,
                           CartItemRepository cartItemRepository,
                           OrderItemRepository orderItemRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
-        this.inventoryRepository = inventoryRepository;
         this.cartItemRepository = cartItemRepository;
         this.orderItemRepository = orderItemRepository;
     }
@@ -60,15 +55,27 @@ public class CatalogService {
         return mapToDto(product);
     }
 
+    private List<Long> resolveCategoryIds(Long categoryId) {
+        if (categoryId == null) return List.of();
+        List<Long> ids = new ArrayList<>();
+        ids.add(categoryId);
+        List<Category> subs = categoryRepository.findByParentId(categoryId);
+        for (Category sub : subs) {
+            ids.add(sub.getId());
+        }
+        return ids;
+    }
+
     public List<ProductDto> searchProducts(String keyword, Long categoryId) {
+        List<Long> catIds = resolveCategoryIds(categoryId);
         boolean hasKeyword = keyword != null && !keyword.isBlank();
-        boolean hasCategory = categoryId != null;
+        boolean hasCategory = !catIds.isEmpty();
 
         List<Product> products;
         if (hasCategory && hasKeyword) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCase(categoryId, keyword);
+            products = productRepository.findByCategoryIdInAndNameContainingIgnoreCase(catIds, keyword);
         } else if (hasCategory) {
-            products = productRepository.findByCategoryId(categoryId);
+            products = productRepository.findByCategoryIdIn(catIds);
         } else if (hasKeyword) {
             products = productRepository.findByNameContainingIgnoreCase(keyword);
         } else {
@@ -77,27 +84,62 @@ public class CatalogService {
         return products.stream().map(this::mapToDto).toList();
     }
 
-    public Page<ProductDto> searchProductsPaginated(String keyword, Long categoryId, Pageable pageable) {
+    public Page<ProductDto> searchProductsPaginated(String keyword, Long categoryId, Boolean inStock, Pageable pageable) {
+        List<Long> catIds = resolveCategoryIds(categoryId);
         boolean hasKeyword = keyword != null && !keyword.isBlank();
-        boolean hasCategory = categoryId != null;
+        boolean hasCategory = !catIds.isEmpty();
+        boolean filterStock = Boolean.TRUE.equals(inStock);
 
         Page<Product> products;
-        if (hasCategory && hasKeyword) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCase(categoryId, keyword, pageable);
-        } else if (hasCategory) {
-            products = productRepository.findByCategoryId(categoryId, pageable);
-        } else if (hasKeyword) {
-            products = productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+        if (filterStock) {
+            if (hasCategory && hasKeyword) {
+                products = productRepository.findByCategoryIdInAndNameContainingIgnoreCaseAndStockGreaterThan(catIds, keyword, 0, pageable);
+            } else if (hasCategory) {
+                products = productRepository.findByCategoryIdInAndStockGreaterThan(catIds, 0, pageable);
+            } else if (hasKeyword) {
+                products = productRepository.findByNameContainingIgnoreCaseAndStockGreaterThan(keyword, 0, pageable);
+            } else {
+                products = productRepository.findByStockGreaterThan(0, pageable);
+            }
         } else {
-            products = productRepository.findAll(pageable);
+            if (hasCategory && hasKeyword) {
+                products = productRepository.findByCategoryIdInAndNameContainingIgnoreCase(catIds, keyword, pageable);
+            } else if (hasCategory) {
+                products = productRepository.findByCategoryIdIn(catIds, pageable);
+            } else if (hasKeyword) {
+                products = productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+            } else {
+                products = productRepository.findAll(pageable);
+            }
         }
         return products.map(this::mapToDto);
     }
 
     public List<CategoryDto> getAllCategories() {
         return categoryRepository.findAll().stream()
-                .map(c -> new CategoryDto(c.getId(), c.getName(), c.getDescription()))
+                .map(this::mapCategoryToDto)
                 .toList();
+    }
+
+    public List<CategoryDto> getParentCategories() {
+        return categoryRepository.findByParentIsNull().stream()
+                .map(this::mapCategoryToDto)
+                .toList();
+    }
+
+    public List<CategoryDto> getSubCategories(Long parentId) {
+        return categoryRepository.findByParentId(parentId).stream()
+                .map(this::mapCategoryToDto)
+                .toList();
+    }
+
+    private CategoryDto mapCategoryToDto(Category c) {
+        return new CategoryDto(
+                c.getId(),
+                c.getName(),
+                c.getDescription(),
+                c.getParent() != null ? c.getParent().getId() : null
+        );
     }
 
     @Transactional
@@ -111,20 +153,12 @@ public class CatalogService {
                 .imageUrl(request.imageUrl())
                 .description(request.description())
                 .category(category)
+                .stock(request.stock() != null ? request.stock() : 100)
                 .videoPath(request.videoPath())
                 .imagePaths(request.imagePaths() != null ? request.imagePaths() : new ArrayList<>())
                 .build();
 
-        product = productRepository.save(product);
-
-        Inventory inventory = Inventory.builder()
-                .product(product)
-                .quantity(request.stock())
-                .build();
-        inventoryRepository.save(inventory);
-
-        product.setInventory(inventory);
-        return mapToDto(product);
+        return mapToDto(productRepository.save(product));
     }
 
     @Transactional
@@ -138,6 +172,7 @@ public class CatalogService {
         if (request.description() != null) product.setDescription(request.description());
         if (request.videoPath() != null) product.setVideoPath(request.videoPath());
         if (request.imagePaths() != null) product.setImagePaths(request.imagePaths());
+        if (request.stock() != null) product.setStock(request.stock());
 
         if (request.categoryId() != null) {
             Category category = categoryRepository.findById(request.categoryId())
@@ -145,8 +180,7 @@ public class CatalogService {
             product.setCategory(category);
         }
 
-        product = productRepository.save(product);
-        return mapToDto(product);
+        return mapToDto(productRepository.save(product));
     }
 
     @Transactional
@@ -160,7 +194,6 @@ public class CatalogService {
     }
 
     private ProductDto mapToDto(Product product) {
-        Inventory inventory = product.getInventory();
         return new ProductDto(
                 product.getId(),
                 product.getName(),
@@ -169,7 +202,7 @@ public class CatalogService {
                 product.getDescription(),
                 product.getCategory() != null ? product.getCategory().getName() : null,
                 product.getCategory() != null ? product.getCategory().getId() : null,
-                inventory != null ? inventory.getQuantity() : 0,
+                product.getStock(),
                 product.getVideoPath(),
                 product.getImagePaths(),
                 product.getCreatedAt() != null ? product.getCreatedAt().toString() : null
