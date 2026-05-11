@@ -4,7 +4,6 @@ import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
-import com.estore.inventory.service.InventoryService;
 import com.estore.shared.exception.InsufficientStockException;
 import com.estore.shared.exception.ResourceNotFoundException;
 import com.estore.shopping.dto.CartDto;
@@ -25,16 +24,13 @@ public class ShoppingService {
     private final CartRepository cartRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final InventoryService inventoryService;
 
     public ShoppingService(CartRepository cartRepository,
                            UserRepository userRepository,
-                           ProductRepository productRepository,
-                           InventoryService inventoryService) {
+                           ProductRepository productRepository) {
         this.cartRepository = cartRepository;
         this.userRepository = userRepository;
         this.productRepository = productRepository;
-        this.inventoryService = inventoryService;
     }
 
     @Transactional
@@ -49,7 +45,7 @@ public class ShoppingService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
 
-        if (!inventoryService.hasStock(productId, quantity)) {
+        if (product.getStock() < quantity) {
             throw new InsufficientStockException("Insufficient stock for product: " + product.getName());
         }
 
@@ -90,7 +86,7 @@ public class ShoppingService {
         if (quantity <= 0) {
             cart.getItems().remove(item);
         } else {
-            if (!inventoryService.hasStock(item.getProduct().getId(), quantity)) {
+            if (item.getProduct().getStock() < quantity) {
                 throw new InsufficientStockException("Insufficient stock");
             }
             item.setQuantity(quantity);

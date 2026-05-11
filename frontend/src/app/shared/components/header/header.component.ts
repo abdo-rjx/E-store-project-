@@ -26,6 +26,9 @@ import { ThemeService } from '../../../core/services/theme.service';
              [routerLinkActiveOptions]="{exact: true}" class="nav-link">
             Shop
           </a>
+          <a routerLink="/categories" routerLinkActive="nav-active" class="nav-link">
+            Categories
+          </a>
 
           @if (authService.isLoggedIn) {
             <a routerLink="/cart" routerLinkActive="nav-active" class="nav-link cart-link">
@@ -127,6 +130,10 @@ import { ThemeService } from '../../../core/services/theme.service';
             <a routerLink="/products" class="mobile-nav-link" (click)="closeMobile()">
               <span class="material-icons">storefront</span>
               Shop
+            </a>
+            <a routerLink="/categories" class="mobile-nav-link" (click)="closeMobile()">
+              <span class="material-icons">category</span>
+              Categories
             </a>
             @if (authService.isLoggedIn) {
               <a routerLink="/cart" class="mobile-nav-link" (click)="closeMobile()">

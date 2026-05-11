@@ -35,15 +35,24 @@ export class ApiService {
     return this.http.get<ApiResponse<Product[]>>(url);
   }
 
-  getProductsPaginated(page: number, size: number, keyword?: string, categoryId?: number): Observable<ApiResponse<PageResponse<Product>>> {
+  getProductsPaginated(page: number, size: number, keyword?: string, categoryId?: number, inStock?: boolean): Observable<ApiResponse<PageResponse<Product>>> {
     let url = `${this.baseUrl}/products/page?page=${page}&size=${size}`;
     if (keyword) url += `&keyword=${keyword}`;
-    if (categoryId) url += `&categoryId=${categoryId}`;
+    if (categoryId !== undefined) url += `&categoryId=${categoryId}`;
+    if (inStock) url += `&inStock=true`;
     return this.http.get<ApiResponse<PageResponse<Product>>>(url);
   }
 
   getCategories(): Observable<ApiResponse<Category[]>> {
     return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories`);
+  }
+
+  getParentCategories(): Observable<ApiResponse<Category[]>> {
+    return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories/parents`);
+  }
+
+  getSubCategories(parentId: number): Observable<ApiResponse<Category[]>> {
+    return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories/${parentId}/subcategories`);
   }
 
   getCart(userId: number): Observable<ApiResponse<Cart>> {

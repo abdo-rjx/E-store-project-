@@ -394,7 +394,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.api.getCategories().subscribe({
+    this.api.getParentCategories().subscribe({
       next: (cats) => {
         const categories = cats.data;
         this.api.getProducts().subscribe({
@@ -422,7 +422,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   goToCategoryPage(categoryName: string): void {
-    this.router.navigate(['/shop/category', categoryName]);
+    this.router.navigate(['/categories', categoryName]);
   }
 
   private startCarousels(): void {
@@ -446,6 +446,17 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   private buildSections(categories: Category[], products: Product[]): void {
+    // Build category hierarchy: parentId -> [subCategoryIds]
+    const parentToChildren = new Map<number, number[]>();
+    for (const cat of categories) {
+      if (cat.parentId) {
+        const children = parentToChildren.get(cat.parentId) || [];
+        children.push(cat.id);
+        parentToChildren.set(cat.parentId, children);
+      }
+    }
+
+    // Group products by their actual categoryId
     const grouped = new Map<number, Product[]>();
     for (const p of products) {
       const list = grouped.get(p.categoryId) || [];
@@ -457,8 +468,17 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
 
     this.sections = categories
+      .filter(cat => !cat.parentId) // only parent categories
       .map(cat => {
-        const catProducts = grouped.get(cat.id) || [];
+        // Collect products from this parent + all subcategories
+        const catProductIds = [cat.id, ...(parentToChildren.get(cat.id) || [])];
+        const catProducts: Product[] = [];
+        for (const cid of catProductIds) {
+          const cp = grouped.get(cid);
+          if (cp) catProducts.push(...cp);
+        }
+        catProducts.sort((a, b) => b.id - a.id);
+
         if (catProducts.length === 0) return null;
 
         const topProducts = catProducts.slice(0, 5);

@@ -47,9 +47,10 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId) {
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean inStock) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<ProductDto> result = catalogService.searchProductsPaginated(keyword, categoryId, pageable);
+        Page<ProductDto> result = catalogService.searchProductsPaginated(keyword, categoryId, inStock, pageable);
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(result)));
     }
 

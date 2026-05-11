@@ -8,7 +8,6 @@ import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
-import com.estore.inventory.service.InventoryService;
 import com.estore.shopping.dto.CartDto;
 import com.estore.shopping.dto.CartItemDto;
 import com.estore.shopping.service.ShoppingService;
@@ -25,7 +24,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,9 +38,6 @@ class BillingServiceTest {
 
     @Mock
     private ShoppingService shoppingService;
-
-    @Mock
-    private InventoryService inventoryService;
 
     @Mock
     private ProductRepository productRepository;
@@ -74,13 +70,11 @@ class BillingServiceTest {
     @Test
     void placeOrder_shouldCreateOrder_whenCartHasItemsAndStockAvailable() {
         Category category = Category.builder().id(1L).name("Electronics").build();
-        Product product1 = Product.builder().id(1L).name("iPhone 15").price(999.99).category(category).build();
-        Product product2 = Product.builder().id(2L).name("Galaxy S24").price(899.99).category(category).build();
+        Product product1 = Product.builder().id(1L).name("iPhone 15").price(999.99).category(category).stock(10).build();
+        Product product2 = Product.builder().id(2L).name("Galaxy S24").price(899.99).category(category).stock(10).build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(shoppingService.getCart(1L)).thenReturn(cartWithItems);
-        when(inventoryService.hasStock(1L, 2)).thenReturn(true);
-        when(inventoryService.hasStock(2L, 1)).thenReturn(true);
         when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
         when(productRepository.findById(2L)).thenReturn(Optional.of(product2));
         when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
@@ -97,8 +91,7 @@ class BillingServiceTest {
         assertThat(result.status()).isEqualTo("CONFIRMED");
         assertThat(result.items()).hasSize(2);
 
-        verify(inventoryService).decrementStock(1L, 2);
-        verify(inventoryService).decrementStock(2L, 1);
+        verify(productRepository, times(2)).save(any(Product.class));
         verify(shoppingService).clearCart(1L);
         verify(orderRepository).save(any(Order.class));
     }
@@ -113,14 +106,16 @@ class BillingServiceTest {
                 .hasMessageContaining("empty cart");
 
         verify(orderRepository, never()).save(any());
-        verify(inventoryService, never()).decrementStock(anyLong(), anyInt());
     }
 
     @Test
     void placeOrder_shouldThrowException_whenStockInsufficient() {
+        Category category = Category.builder().id(1L).name("Electronics").build();
+        Product product1 = Product.builder().id(1L).name("iPhone 15").price(999.99).category(category).stock(1).build();
+
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(shoppingService.getCart(1L)).thenReturn(cartWithItems);
-        when(inventoryService.hasStock(1L, 2)).thenReturn(false);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product1));
 
         assertThatThrownBy(() -> billingService.placeOrder(1L))
                 .isInstanceOf(IllegalArgumentException.class)

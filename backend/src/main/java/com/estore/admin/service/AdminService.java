@@ -3,9 +3,11 @@ package com.estore.admin.service;
 import com.estore.catalog.dto.CategoryDto;
 import com.estore.catalog.dto.ProductDto;
 import com.estore.catalog.entity.Category;
+import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.CategoryRepository;
+import com.estore.catalog.repository.ProductRepository;
 import com.estore.catalog.service.CatalogService;
-import com.estore.inventory.service.InventoryService;
+import com.estore.shared.exception.ResourceNotFoundException;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,26 +19,32 @@ import java.util.List;
 public class AdminService {
 
     private final CatalogService catalogService;
-    private final InventoryService inventoryService;
     private final CategoryRepository categoryRepository;
+    private final ProductRepository productRepository;
 
-    public AdminService(CatalogService catalogService, InventoryService inventoryService,
-                        CategoryRepository categoryRepository) {
+    public AdminService(CatalogService catalogService,
+                        CategoryRepository categoryRepository,
+                        ProductRepository productRepository) {
         this.catalogService = catalogService;
-        this.inventoryService = inventoryService;
         this.categoryRepository = categoryRepository;
+        this.productRepository = productRepository;
     }
 
     public CategoryDto createCategory(CategoryDto request) {
         if (categoryRepository.findByName(request.name()).isPresent()) {
             throw new IllegalArgumentException("Category already exists: " + request.name());
         }
-        Category category = Category.builder()
+        Category.CategoryBuilder builder = Category.builder()
                 .name(request.name())
-                .description(request.description())
-                .build();
-        category = categoryRepository.save(category);
-        return new CategoryDto(category.getId(), category.getName(), category.getDescription());
+                .description(request.description());
+        if (request.parentId() != null) {
+            Category parent = categoryRepository.findById(request.parentId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parent category not found: " + request.parentId()));
+            builder.parent(parent);
+        }
+        Category category = categoryRepository.save(builder.build());
+        return new CategoryDto(category.getId(), category.getName(), category.getDescription(),
+                category.getParent() != null ? category.getParent().getId() : null);
     }
 
     public ProductDto createProduct(ProductDto request) {
@@ -61,20 +69,18 @@ public class AdminService {
         String finalImage = imagePaths != null && !imagePaths.isEmpty() ? imagePaths.get(0) : existing.imageUrl();
 
         ProductDto dto = new ProductDto(id, name, price, finalImage, description, null, categoryId, stock, finalVideo, finalImages, null);
-        catalogService.updateProduct(id, dto);
-
-        if (stock != null) {
-            inventoryService.updateStock(id, stock);
-        }
-
-        return catalogService.getProductById(id);
+        return catalogService.updateProduct(id, dto);
     }
 
     public void deleteProduct(Long id) {
         catalogService.deleteProduct(id);
     }
 
+    @Transactional
     public void updateStock(Long productId, Integer quantity) {
-        inventoryService.updateStock(productId, quantity);
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + productId));
+        product.setStock(quantity);
+        productRepository.save(product);
     }
 }

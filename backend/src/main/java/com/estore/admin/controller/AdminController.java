@@ -153,4 +153,12 @@ public class AdminController {
                     .body(ApiResponse.error(e.getMessage(), null));
         }
     }
+
+    @PutMapping("/inventory/{productId}")
+    public ResponseEntity<ApiResponse<Void>> updateStock(
+            @PathVariable Long productId,
+            @RequestParam Integer quantity) {
+        adminService.updateStock(productId, quantity);
+        return ResponseEntity.ok(ApiResponse.ok("Stock updated", null));
+    }
 }

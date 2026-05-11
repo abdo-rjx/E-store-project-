@@ -4,9 +4,7 @@ import com.estore.catalog.dto.CategoryDto;
 import com.estore.catalog.service.CatalogService;
 import com.estore.shared.model.ApiResponse;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,5 +21,15 @@ public class CategoryController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<CategoryDto>>> getAllCategories() {
         return ResponseEntity.ok(ApiResponse.ok(catalogService.getAllCategories()));
+    }
+
+    @GetMapping("/parents")
+    public ResponseEntity<ApiResponse<List<CategoryDto>>> getParentCategories() {
+        return ResponseEntity.ok(ApiResponse.ok(catalogService.getParentCategories()));
+    }
+
+    @GetMapping("/{parentId}/subcategories")
+    public ResponseEntity<ApiResponse<List<CategoryDto>>> getSubCategories(@PathVariable Long parentId) {
+        return ResponseEntity.ok(ApiResponse.ok(catalogService.getSubCategories(parentId)));
     }
 }
