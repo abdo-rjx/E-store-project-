@@ -5,7 +5,6 @@ import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
-import com.estore.inventory.service.InventoryService;
 import com.estore.shopping.dto.CartDto;
 import com.estore.shopping.entity.Cart;
 import com.estore.shopping.entity.CartItem;
@@ -38,9 +37,6 @@ class ShoppingServiceTest {
     @Mock
     private ProductRepository productRepository;
 
-    @Mock
-    private InventoryService inventoryService;
-
     @InjectMocks
     private ShoppingService shoppingService;
 
@@ -68,6 +64,7 @@ class ShoppingServiceTest {
                 .imageUrl("https://placehold.co/300x300")
                 .description("Phone")
                 .category(category)
+                .stock(50)
                 .build();
 
         cart = Cart.builder()
@@ -105,7 +102,6 @@ class ShoppingServiceTest {
     @Test
     void addToCart_shouldAddNewItem_whenProductNotInCart() {
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(inventoryService.hasStock(1L, 2)).thenReturn(true);
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -129,7 +125,6 @@ class ShoppingServiceTest {
         cart.getItems().add(existingItem);
 
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(inventoryService.hasStock(1L, 2)).thenReturn(true);
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -141,8 +136,8 @@ class ShoppingServiceTest {
 
     @Test
     void addToCart_shouldThrowException_whenInsufficientStock() {
+        product.setStock(1);
         when(productRepository.findById(1L)).thenReturn(Optional.of(product));
-        when(inventoryService.hasStock(1L, 100)).thenReturn(false);
 
         assertThatThrownBy(() -> shoppingService.addToCart(1L, 1L, 100))
                 .isInstanceOf(RuntimeException.class)
@@ -172,7 +167,6 @@ class ShoppingServiceTest {
         cart.getItems().add(item);
 
         when(cartRepository.findByUserId(1L)).thenReturn(Optional.of(cart));
-        when(inventoryService.hasStock(1L, 5)).thenReturn(true);
         when(cartRepository.save(any(Cart.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         CartDto result = shoppingService.updateQuantity(1L, 10L, 5);
@@ -229,7 +223,7 @@ class ShoppingServiceTest {
                 .build();
         CartItem item2 = CartItem.builder()
                 .id(11L)
-                .product(Product.builder().id(2L).name("Accessory").price(50.0).build())
+                .product(Product.builder().id(2L).name("Accessory").price(50.0).stock(10).build())
                 .quantity(1)
                 .unitPrice(50.0)
                 .cart(cart)

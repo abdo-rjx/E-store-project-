@@ -50,7 +50,11 @@ export const routes: Routes = [
     canActivate: [AdminGuard]
   },
   {
-    path: 'shop/category/:categoryName',
+    path: 'categories',
+    loadComponent: () => import('./features/catalog/category-page/category-page.component').then(m => m.CategoryPageComponent)
+  },
+  {
+    path: 'categories/:categoryName',
     loadComponent: () => import('./features/catalog/category-page/category-page.component').then(m => m.CategoryPageComponent)
   },
   {

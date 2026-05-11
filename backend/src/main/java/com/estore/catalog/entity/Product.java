@@ -1,6 +1,5 @@
 package com.estore.catalog.entity;
 
-import com.estore.inventory.entity.Inventory;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -35,13 +34,12 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Inventory inventory;
+    @Column(nullable = false)
+    @Builder.Default
+    private Integer stock = 100;
 
-    // NEW: Video path for product promotional video
     private String videoPath;
 
-    // NEW: Multiple image paths (stored as comma-separated or in a separate table)
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "product_images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_path")

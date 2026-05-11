@@ -9,7 +9,6 @@ import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.customer.entity.User;
 import com.estore.customer.repository.UserRepository;
-import com.estore.inventory.service.InventoryService;
 import com.estore.shared.exception.ResourceNotFoundException;
 import com.estore.shopping.dto.CartDto;
 import com.estore.shopping.dto.CartItemDto;
@@ -27,18 +26,15 @@ public class BillingService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ShoppingService shoppingService;
-    private final InventoryService inventoryService;
     private final ProductRepository productRepository;
 
     public BillingService(OrderRepository orderRepository,
                           UserRepository userRepository,
                           ShoppingService shoppingService,
-                          InventoryService inventoryService,
                           ProductRepository productRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.shoppingService = shoppingService;
-        this.inventoryService = inventoryService;
         this.productRepository = productRepository;
     }
 
@@ -55,7 +51,9 @@ public class BillingService {
 
         // Validate stock first
         for (CartItemDto item : cart.items()) {
-            if (!inventoryService.hasStock(item.productId(), item.quantity())) {
+            Product prod = productRepository.findById(item.productId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Product not found: " + item.productId()));
+            if (prod.getStock() < item.quantity()) {
                 throw new IllegalArgumentException("Insufficient stock for: " + item.productName());
             }
         }
@@ -79,7 +77,8 @@ public class BillingService {
                     .unitPrice(item.unitPrice())
                     .build();
 
-            inventoryService.decrementStock(item.productId(), item.quantity());
+            product.setStock(product.getStock() - item.quantity());
+            productRepository.save(product);
 
             order.getItems().add(orderItem);
         }
@@ -90,12 +89,15 @@ public class BillingService {
         return mapToDto(order);
     }
 
+    @Transactional(readOnly = true)
     public List<OrderDto> getUserOrders(Long userId) {
-        return orderRepository.findByUserIdOrderByOrderDateDesc(userId).stream()
+        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(userId);
+        return orders.stream()
                 .map(this::mapToDto)
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public OrderDto getOrderById(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));

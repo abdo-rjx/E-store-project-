@@ -35,15 +35,30 @@ export class ApiService {
     return this.http.get<ApiResponse<Product[]>>(url);
   }
 
-  getProductsPaginated(page: number, size: number, keyword?: string, categoryId?: number): Observable<ApiResponse<PageResponse<Product>>> {
+  getProductsPaginated(page: number, size: number, keyword?: string, categoryId?: number, inStock?: boolean, sortBy?: string, sortDirection?: string): Observable<ApiResponse<PageResponse<Product>>> {
     let url = `${this.baseUrl}/products/page?page=${page}&size=${size}`;
     if (keyword) url += `&keyword=${keyword}`;
-    if (categoryId) url += `&categoryId=${categoryId}`;
+    if (categoryId !== undefined) url += `&categoryId=${categoryId}`;
+    if (inStock) url += `&inStock=true`;
+    if (sortBy) url += `&sortBy=${sortBy}`;
+    if (sortDirection) url += `&sortDirection=${sortDirection}`;
     return this.http.get<ApiResponse<PageResponse<Product>>>(url);
+  }
+
+  getRandomProducts(page: number, size: number): Observable<ApiResponse<PageResponse<Product>>> {
+    return this.http.get<ApiResponse<PageResponse<Product>>>(`${this.baseUrl}/products/random?page=${page}&size=${size}`);
   }
 
   getCategories(): Observable<ApiResponse<Category[]>> {
     return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories`);
+  }
+
+  getParentCategories(): Observable<ApiResponse<Category[]>> {
+    return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories/parents`);
+  }
+
+  getSubCategories(parentId: number): Observable<ApiResponse<Category[]>> {
+    return this.http.get<ApiResponse<Category[]>>(`${this.baseUrl}/categories/${parentId}/subcategories`);
   }
 
   getCart(userId: number): Observable<ApiResponse<Cart>> {

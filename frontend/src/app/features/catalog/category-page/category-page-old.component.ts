@@ -26,27 +26,16 @@ import { Product, Category, PageResponse } from '../../../core/models';
         <aside class="cat-sidebar">
           <div class="sidebar-section">
             <h3 class="sidebar-title">Categories</h3>
-            <button class="sidebar-cat" [class.active]="!selectedCategoryId && !selectedSubCategoryId" (click)="filterByCategory(null)">
+            <button class="sidebar-cat" [class.active]="!selectedCategoryId" (click)="filterByCategory(null)">
               <span class="material-icons">grid_view</span>
               All Categories
             </button>
-            @for (cat of parentCategories; track cat.id) {
-              <button class="sidebar-cat" [class.active]="selectedCategoryId === cat.id && !selectedSubCategoryId"
+            @for (cat of categories; track cat.id) {
+              <button class="sidebar-cat" [class.active]="selectedCategoryId === cat.id"
                       (click)="filterByCategory(cat.id)">
                 <span class="material-icons">chevron_right</span>
                 {{ cat.name }}
               </button>
-              @if (selectedCategoryId === cat.id && subCategories.length > 0) {
-                <div class="sidebar-subcats">
-                  @for (sub of subCategories; track sub.id) {
-                    <button class="sidebar-subcat" [class.active]="selectedSubCategoryId === sub.id"
-                            (click)="filterBySubCategory(sub.id)">
-                      <span class="material-icons">subdirectory_arrow_right</span>
-                      {{ sub.name }}
-                    </button>
-                  }
-                </div>
-              }
             }
           </div>
 
@@ -93,18 +82,12 @@ import { Product, Category, PageResponse } from '../../../core/models';
           </div>
 
           <!-- Active Filters -->
-          @if (selectedCategoryId || selectedSubCategoryId || inStockOnly || minPrice || maxPrice) {
+          @if (selectedCategoryId || inStockOnly || minPrice || maxPrice) {
             <div class="active-filters">
               @if (selectedCategoryId) {
                 <span class="filter-chip">
                   {{ getCategoryName(selectedCategoryId) }}
                   <button (click)="filterByCategory(null)"><span class="material-icons">close</span></button>
-                </span>
-              }
-              @if (selectedSubCategoryId) {
-                <span class="filter-chip">
-                  {{ getSubCategoryName(selectedSubCategoryId) }}
-                  <button (click)="filterBySubCategory(0)"><span class="material-icons">close</span></button>
                 </span>
               }
               @if (inStockOnly) {
@@ -203,22 +186,6 @@ import { Product, Category, PageResponse } from '../../../core/models';
     .sidebar-cat:hover { background: var(--accent-primary-glow); color: var(--accent-primary); }
     .sidebar-cat.active { background: var(--accent-primary-glow); color: var(--accent-primary); font-weight: 600; }
     .sidebar-cat .material-icons { font-size: 16px; }
-
-    .sidebar-subcats {
-      display: flex; flex-direction: column; gap: 2px;
-      margin-left: 16px; margin-top: 2px; margin-bottom: 4px;
-    }
-    .sidebar-subcat {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 12px; border: none; background: transparent;
-      color: var(--text-tertiary); font-size: 13px; font-weight: 400;
-      border-radius: var(--radius-sm); cursor: pointer;
-      transition: all 0.15s; text-align: left; width: 100%;
-      font-family: 'DM Sans', sans-serif;
-    }
-    .sidebar-subcat:hover { background: var(--accent-primary-glow); color: var(--accent-primary); }
-    .sidebar-subcat.active { color: var(--accent-primary); font-weight: 600; }
-    .sidebar-subcat .material-icons { font-size: 14px; }
 
     .sidebar-check {
       display: flex; align-items: center; gap: 10px;
@@ -338,14 +305,11 @@ import { Product, Category, PageResponse } from '../../../core/models';
 })
 export class CategoryPageComponent implements OnInit {
   categories: Category[] = [];
-  parentCategories: Category[] = [];
-  subCategories: Category[] = [];
   products: Product[] = [];
   loading = true;
 
   searchTerm = '';
   selectedCategoryId: number | null = null;
-  selectedSubCategoryId: number | null = null;
   inStockOnly = false;
   minPrice: number | null = null;
   maxPrice: number | null = null;
@@ -360,8 +324,7 @@ export class CategoryPageComponent implements OnInit {
   constructor(
     private api: ApiService,
     private snackBar: MatSnackBar,
-    private router: Router,
-    private route: ActivatedRoute
+    private router: Router
   ) {}
 
   get pageNumbers(): number[] {
@@ -374,50 +337,19 @@ export class CategoryPageComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCategories();
-    const categoryName = this.route.snapshot.paramMap.get('categoryName');
-    if (categoryName) {
-      this.api.getCategories().subscribe({
-        next: (res) => {
-          this.categories = res.data;
-          this.parentCategories = res.data.filter(c => !c.parentId);
-          const cat = this.parentCategories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
-          if (cat) {
-            this.selectedCategoryId = cat.id;
-            this.loadSubCategories(cat.id);
-          }
-          this.loadProducts();
-        },
-        error: () => this.loadProducts()
-      });
-    } else {
-      this.loadProducts();
-    }
+    this.loadProducts();
   }
 
   loadCategories(): void {
-    this.api.getParentCategories().subscribe({
-      next: (res) => {
-        this.parentCategories = res.data;
-        this.categories = res.data;
-      },
+    this.api.getCategories().subscribe({
+      next: (res) => { this.categories = res.data; },
       error: () => {}
-    });
-  }
-
-  loadSubCategories(parentId: number): void {
-    this.api.getSubCategories(parentId).subscribe({
-      next: (res) => {
-        this.subCategories = res.data;
-        this.categories = [...this.parentCategories, ...this.subCategories];
-      },
-      error: () => { this.subCategories = []; }
     });
   }
 
   loadProducts(): void {
     this.loading = true;
-    const categoryId = this.selectedSubCategoryId ?? this.selectedCategoryId ?? undefined;
-    this.api.getProductsPaginated(this.currentPage, this.pageSize, this.searchTerm || undefined, categoryId, this.inStockOnly || undefined)
+    this.api.getProductsPaginated(this.currentPage, this.pageSize, this.searchTerm || undefined, this.selectedCategoryId ?? undefined, this.inStockOnly || undefined)
       .subscribe({
         next: (res) => {
           const page = res.data;
@@ -436,21 +368,6 @@ export class CategoryPageComponent implements OnInit {
 
   filterByCategory(categoryId: number | null): void {
     this.selectedCategoryId = categoryId;
-    this.selectedSubCategoryId = null;
-    this.subCategories = [];
-    this.currentPage = 0;
-    if (categoryId) {
-      this.loadSubCategories(categoryId);
-    }
-    this.loadProducts();
-  }
-
-  filterBySubCategory(subCategoryId: number): void {
-    if (subCategoryId === 0) {
-      this.selectedSubCategoryId = null;
-    } else {
-      this.selectedSubCategoryId = subCategoryId;
-    }
     this.currentPage = 0;
     this.loadProducts();
   }
@@ -472,8 +389,6 @@ export class CategoryPageComponent implements OnInit {
   clearFilters(): void {
     this.searchTerm = '';
     this.selectedCategoryId = null;
-    this.selectedSubCategoryId = null;
-    this.subCategories = [];
     this.inStockOnly = false;
     this.minPrice = null;
     this.maxPrice = null;
@@ -489,9 +404,5 @@ export class CategoryPageComponent implements OnInit {
 
   getCategoryName(id: number): string {
     return this.categories.find(c => c.id === id)?.name || '';
-  }
-
-  getSubCategoryName(id: number): string {
-    return this.subCategories.find(c => c.id === id)?.name || '';
   }
 }

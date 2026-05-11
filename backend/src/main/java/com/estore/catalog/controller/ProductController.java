@@ -13,10 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductController.class);
     private final CatalogService catalogService;
 
     public ProductController(CatalogService catalogService) {
@@ -47,10 +51,36 @@ public class ProductController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) Long categoryId) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<ProductDto> result = catalogService.searchProductsPaginated(keyword, categoryId, pageable);
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String sortDirection) {
+        if (sortBy == null) sortBy = "id";
+        if (sortDirection == null) sortDirection = "desc";
+        Sort sort = resolveSort(sortBy, sortDirection);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<ProductDto> result = catalogService.searchProductsPaginated(keyword, categoryId, inStock, pageable);
         return ResponseEntity.ok(ApiResponse.ok(PageResponse.from(result)));
+    }
+
+    private Sort resolveSort(String sortBy, String sortDirection) {
+        String field = switch (sortBy) {
+            case "price" -> "price";
+            case "name" -> "name";
+            case "createdAt" -> "createdAt";
+            default -> "id";
+        };
+        Sort.Direction dir = "asc".equalsIgnoreCase(sortDirection)
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
+        return Sort.by(dir, field);
+    }
+
+    @GetMapping("/random")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getRandomProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size) {
+        return ResponseEntity.ok(ApiResponse.ok(catalogService.getRandomProducts(page, size)));
     }
 
     // NEW: Get latest 3 products for video slider on home page
