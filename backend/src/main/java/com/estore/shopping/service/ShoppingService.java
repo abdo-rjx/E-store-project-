@@ -37,6 +37,7 @@ public class ShoppingService {
         this.inventoryService = inventoryService;
     }
 
+    @Transactional
     public CartDto getCart(Long userId) {
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> cartRepository.save(createCartForUser(userId)));

@@ -140,6 +140,28 @@
   --noise-opacity: 0.015;
 }
 
+/* ---- LIGHT MODE TEXT FIXES ---- */
+[data-theme="light"] .showcase-heading,
+[data-theme="light"] .body-heading {
+  color: #1A1613 !important;
+}
+
+[data-theme="light"] .body-text {
+  color: #6B5F55 !important;
+}
+
+[data-theme="light"] .perk-body h4 {
+  color: #1A1613 !important;
+}
+
+[data-theme="light"] .perk-body p {
+  color: #6B5F55 !important;
+}
+
+[data-theme="light"] .editorial-cta h2 {
+  color: #1A1613 !important;
+}
+
 /* ---- NOISE TEXTURE OVERLAY ---- */
 body::before {
   content: '';
