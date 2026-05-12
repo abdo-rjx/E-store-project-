@@ -94,7 +94,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
                 @for (p of featuredProducts; track p.id; let i = $index) {
                   <button class="sony-hero-dot"
                           [class.is-active]="i === featuredIndex"
-                          (click)="setFeaturedIndex(i)"
+                          (click)="featuredIndex = i"
                           [attr.aria-label]="'View ' + p.name"></button>
                 }
               </div>
@@ -1035,7 +1035,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   featuredProducts: Product[] = [];
   featuredIndex = 0;
-  private featuredInterval: any;
   latestProducts: Product[] = [];
   activeSlide = 0;
   sliderLoaded = false;
@@ -1053,7 +1052,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     this.api.getProductsPaginated(0, 6).subscribe({
       next: (res) => {
         this.featuredProducts = res.data.content;
-        this.startFeaturedCarousel();
       },
       error: () => this.snackBar.open('Failed to load products', 'Close', { duration: 3000 }),
     });
@@ -1071,18 +1069,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
         this.sliderLoaded = true;
       }
     });
-  }
-
-  private startFeaturedCarousel(): void {
-    this.featuredInterval = setInterval(() => {
-      this.featuredIndex = (this.featuredIndex + 1) % this.featuredProducts.length;
-    }, 3000);
-  }
-
-  setFeaturedIndex(index: number): void {
-    this.featuredIndex = index;
-    clearInterval(this.featuredInterval);
-    this.startFeaturedCarousel();
   }
 
   ngAfterViewInit(): void {
@@ -1258,7 +1244,6 @@ export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.onScroll) window.removeEventListener('scroll', this.onScroll);
     this.pauseAllVideos();
     if (this.gsapCtx) this.gsapCtx();
-    clearInterval(this.featuredInterval);
   }
 
   goToProducts(): void {
