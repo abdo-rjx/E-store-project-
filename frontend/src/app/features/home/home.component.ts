@@ -1,8 +1,7 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { StickySectionComponent } from '../../shared/components/sticky-section/sticky-section.component';
-import { ProductShowcaseComponent } from '../../shared/components/product-showcase/product-showcase.component';
 import { ScrollRevealDirective } from '../../shared/animations/scroll-reveal.directive';
 import { ApiService } from '../../core/services/api.service';
 import { Product } from '../../core/models';
@@ -14,7 +13,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   imports: [
     CommonModule,
     StickySectionComponent,
-    ProductShowcaseComponent,
     ScrollRevealDirective,
   ],
   template: `
@@ -78,10 +76,124 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     </section>
 
     <!-- FEATURED PRODUCTS -->
-    <app-product-showcase
-      [products]="featuredProducts"
-      appScrollReveal="scale-up"
-    ></app-product-showcase>
+    @if (featuredProducts.length > 0) {
+      <section class="sony-hero">
+        <div class="sony-hero-inner">
+          <div class="sony-hero-visual">
+            <img [src]="featuredProducts[featuredIndex].imagePaths?.[0] || featuredProducts[featuredIndex].imageUrl"
+                 [alt]="featuredProducts[featuredIndex].name" class="sony-hero-img" />
+          </div>
+          <div class="sony-hero-content">
+            <span class="sony-hero-suptitle">Featured</span>
+            <h2 class="sony-hero-title">{{ featuredProducts[featuredIndex].name }}</h2>
+            <p class="sony-hero-desc">{{ featuredProducts[featuredIndex].description }}</p>
+            <span class="sony-hero-price">\${{ featuredProducts[featuredIndex].price | number:'1.2-2' }}</span>
+            <button class="sony-hero-cta" (click)="goToProduct(featuredProducts[featuredIndex].id)">Shop Now</button>
+            @if (featuredProducts.length > 1) {
+              <div class="sony-hero-nav">
+                @for (p of featuredProducts; track p.id; let i = $index) {
+                  <button class="sony-hero-dot"
+                          [class.is-active]="i === featuredIndex"
+                          (click)="setFeaturedIndex(i)"
+                          [attr.aria-label]="'View ' + p.name"></button>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- SCROLL-PINNED VIDEO REVEAL -->
+    <section class="video-reveal-section" id="video-reveal">
+      <div class="video-reveal-sticky" id="video-sticky">
+        <video
+          src="/uploads/tt4.mp4"
+          muted
+          loop
+          playsinline
+          autoplay
+          preload="auto"
+          class="video-reveal-media"
+          id="reveal-video"
+        ></video>
+
+        <div class="video-reveal-texts">
+          <div class="vr-bg-layer" id="text-bg"></div>
+          <div class="vr-group" id="group1">
+            <h2 class="vr-title" id="title1">[placeholder title 1]</h2>
+            <p class="vr-desc" id="desc1">[placeholder description 1]</p>
+          </div>
+          <div class="vr-group" id="group2">
+            <h2 class="vr-title" id="title2">[placeholder title 2]</h2>
+            <p class="vr-desc" id="desc2">[placeholder description 2]</p>
+          </div>
+          <div class="vr-group" id="group3">
+            <h2 class="vr-title" id="title3">[placeholder title 3]</h2>
+            <p class="vr-desc" id="desc3">[placeholder description 3]</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- APPLE TV SHOWCASE -->
+    <!-- APPLE TV SHOWCASE -->
+    <section class="apple-tv-section tv-section" appScrollReveal="fade-up">
+      <h2 class="apple-tv-heading">
+        Watch, sing, play, and work out.<br>
+        On the big screen.
+      </h2>
+
+      <div class="apple-tv-row">
+        <div class="apple-tv-left">
+          <div class="tv-wrapper">
+            <img src="/uploads/images/Chat.png" alt="TV" class="tv-img">
+            <video class="tv-screen" id="tv-screen-video" autoplay muted loop playsinline>
+              <source src="/uploads/videos/tvideo.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+        <div class="apple-tv-right">
+          <h3 class="tv-right-heading">Premium Entertainment</h3>
+          <p class="tv-right-text">
+            Our store offers the latest TVs with the best quality, the most stunning display,
+            and a full satisfaction guarantee. Experience cinema at home.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HEADPHONES SHOWCASE -->
+    <section class="headphones-section" id="headphones-section">
+      <div class="headphones-row">
+        <div class="headphones-left">
+          <div class="headphones-wrapper">
+            <img src="/uploads/images/kk.png" alt="Three headphone colors" />
+          </div>
+        </div>
+        <div class="headphones-right">
+          <h2 class="hp-heading">Elevate your listening experience</h2>
+          <p class="hp-text">Premium sound in three signature colors. ANC, 40h battery, studio-grade audio.</p>
+          <a href="#" class="hp-btn">Shop now</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="editorial-cta" appScrollReveal="fade-up">
+      <div class="cta-grain"></div>
+      <div class="cta-content">
+        <span class="cta-label">Ready to Upgrade?</span>
+        <h2>Join thousands of satisfied customers who trust us for their tech needs.</h2>
+        <button class="btn-cinema btn-cinema--light" (click)="goToProducts()">
+          <span class="btn-cinema-label">Browse Full Catalog</span>
+          <span class="btn-cinema-arrow">
+            <span class="material-icons">arrow_forward</span>
+          </span>
+        </button>
+      </div>
+    </section>
 
     <!-- WHY CHOOSE US -->
     <app-sticky-section
@@ -116,21 +228,6 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         </div>
       </div>
     </app-sticky-section>
-
-    <!-- CTA -->
-    <section class="editorial-cta" appScrollReveal="fade-up">
-      <div class="cta-grain"></div>
-      <div class="cta-content">
-        <span class="cta-label">Ready to Upgrade?</span>
-        <h2>Join thousands of satisfied customers who trust us for their tech needs.</h2>
-        <button class="btn-cinema btn-cinema--light" (click)="goToProducts()">
-          <span class="btn-cinema-label">Browse Full Catalog</span>
-          <span class="btn-cinema-arrow">
-            <span class="material-icons">arrow_forward</span>
-          </span>
-        </button>
-      </div>
-    </section>
   `,
   styles: [`
     /* ---- CINEMA SLIDER ---- */
@@ -451,7 +548,423 @@ import { MatSnackBar } from '@angular/material/snack-bar';
       margin-right: auto;
     }
 
+    /* ---- SONY-STYLE FEATURED HERO ---- */
+    .sony-hero {
+      background: var(--bg-secondary);
+      padding: 0;
+      overflow: hidden;
+      transition: background-color 0.3s ease;
+    }
+
+    .sony-hero-inner {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: 80vh;
+    }
+
+    .sony-hero-visual {
+      flex: 0 0 50%;
+      width: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px;
+    }
+
+    .sony-hero-img {
+      width: 100%;
+      height: auto;
+      max-height: 70vh;
+      object-fit: contain;
+      display: block;
+    }
+
+    .sony-hero-content {
+      flex: 0 0 50%;
+      padding: 48px 64px 48px 48px;
+    }
+
+    .sony-hero-suptitle {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .sony-hero-title {
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin: 0 0 16px;
+      letter-spacing: -0.02em;
+    }
+
+    .sony-hero-desc {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin: 0 0 24px;
+      max-width: 440px;
+    }
+
+    .sony-hero-price {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 32px;
+    }
+
+    .sony-hero-cta {
+      display: inline-flex;
+      align-items: center;
+      padding: 14px 36px;
+      border: 2px solid var(--text-primary);
+      border-radius: 0;
+      background: transparent;
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .sony-hero-cta:hover {
+      background: var(--text-primary);
+      color: var(--bg-primary);
+    }
+
+    .sony-hero-nav {
+      display: flex;
+      gap: 12px;
+      margin-top: 48px;
+    }
+
+    .sony-hero-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--text-tertiary);
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.3s ease;
+    }
+
+    .sony-hero-dot.is-active {
+      background: var(--text-primary);
+      border-color: var(--text-primary);
+    }
+
+    .sony-hero-dot:hover {
+      border-color: var(--text-primary);
+    }
+
+    /* ---- SCROLL-PINNED VIDEO REVEAL ---- */
+    .video-reveal-section {
+      height: 500vh;
+      position: relative;
+      background: #000;
+    }
+
+    .video-reveal-sticky {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+    }
+
+    .video-reveal-media {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .video-reveal-texts {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .vr-bg-layer {
+      grid-area: 1 / 1;
+      width: 90%;
+      max-width: 720px;
+      padding: 40px 48px;
+      border-radius: 24px;
+      background: var(--bg-primary);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .vr-group {
+      grid-area: 1 / 1;
+      width: 100%;
+      max-width: 800px;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .vr-title {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: clamp(40px, 5vw, 72px);
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      opacity: 0;
+    }
+
+    .vr-desc {
+      margin: 20px auto 0;
+      font-size: clamp(14px, 1.5vw, 20px);
+      color: var(--text-secondary);
+      max-width: 500px;
+      line-height: 1.6;
+      font-family: 'DM Sans', sans-serif;
+      opacity: 0;
+    }
+
+    /* ---- APPLE TV SHOWCASE ---- */
+    .tv-section {
+      background: #111;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .tv-section {
+        background: #f5f5f7;
+      }
+    }
+
+    .tv-section h2,
+    .tv-section h3,
+    .tv-section p {
+      color: #fff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .tv-section h2,
+      .tv-section h3,
+      .tv-section p {
+        color: #1a1a1a;
+      }
+    }
+
+    .apple-tv-section {
+      padding: 80px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .apple-tv-heading {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 800;
+      line-height: 1.1;
+      text-align: center;
+      margin: 0 0 48px;
+      max-width: 700px;
+    }
+
+    .apple-tv-row {
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .apple-tv-left {
+      flex: 0 0 auto;
+      width: 55%;
+      max-width: 640px;
+    }
+
+    .apple-tv-right {
+      flex: 1;
+      text-align: left;
+    }
+
+    .tv-right-heading {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 20px;
+    }
+
+    .tv-right-text {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: clamp(15px, 1.4vw, 18px);
+      line-height: 1.7;
+      max-width: 440px;
+      margin: 0;
+    }
+
+    .tv-wrapper {
+      position: relative;
+      display: inline-block;
+      max-width: 700px;
+      width: 100%;
+      transition: transform 0.15s ease-out;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .tv-img {
+      width: 100%;
+      display: block;
+    }
+
+    .tv-screen {
+      position: absolute;
+      top: 4.5%;
+      left: 3.5%;
+      width: 93%;
+      height: 79%;
+      object-fit: cover;
+      border-radius: 4px;
+      z-index: 1;
+    }
+
+    /* ---- HEADPHONES SHOWCASE ---- */
+    .headphones-section {
+      padding: 80px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #111;
+      color: #fff;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .headphones-section {
+        background: #f5f5f7;
+        color: #1a1a1a;
+      }
+    }
+
+    .headphones-row {
+      display: flex;
+      align-items: center;
+      gap: 64px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .headphones-left {
+      flex: 0 0 auto;
+      width: 50%;
+      max-width: 560px;
+    }
+
+    .headphones-wrapper {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+      transition: transform 0.15s ease-out;
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .headphones-wrapper img {
+      width: 100%;
+      display: block;
+      object-fit: contain;
+      background: transparent;
+    }
+
+    .headphones-right {
+      flex: 1;
+      text-align: left;
+    }
+
+    .hp-heading {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0 0 20px;
+    }
+
+    .hp-text {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: clamp(15px, 1.4vw, 18px);
+      line-height: 1.7;
+      max-width: 440px;
+      margin: 0 0 28px;
+    }
+
+    .hp-btn {
+      display: inline-block;
+      padding: 12px 32px;
+      border: 1.5px solid currentColor;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 600;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.25s ease;
+    }
+
+    .hp-btn:hover {
+      background: currentColor;
+    }
+
     /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .sony-hero-inner {
+        flex-direction: column;
+        min-height: auto;
+      }
+
+      .sony-hero-visual {
+        flex: none;
+        width: 100%;
+        padding: 32px;
+      }
+
+      .sony-hero-content {
+        flex: none;
+        width: 100%;
+        padding: 0 32px 48px;
+        text-align: center;
+      }
+
+      .sony-hero-desc {
+        max-width: 100%;
+      }
+
+      .sony-hero-nav {
+        justify-content: center;
+      }
     @media (max-width: 768px) {
       .cinema-slider {
         height: 72vh;
@@ -487,6 +1000,28 @@ import { MatSnackBar } from '@angular/material/snack-bar';
         height: 36px;
       }
 
+      .apple-tv-section {
+        padding: 48px 16px;
+      }
+
+      .apple-tv-row {
+        flex-direction: column;
+        gap: 40px;
+      }
+
+      .apple-tv-left {
+        width: 100%;
+        max-width: 500px;
+      }
+
+      .apple-tv-right {
+        text-align: center;
+      }
+
+      .tv-right-text {
+        max-width: 100%;
+      }
+
       .editorial-cta {
         padding: 6rem 1.5rem 5rem;
       }
@@ -497,12 +1032,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     }
   `],
 })
-export class HomeComponent implements OnInit, OnDestroy {
+export class HomeComponent implements OnInit, OnDestroy, AfterViewInit {
   featuredProducts: Product[] = [];
+  featuredIndex = 0;
+  private featuredInterval: any;
   latestProducts: Product[] = [];
   activeSlide = 0;
   sliderLoaded = false;
   private autoSlideTimer: any;
+  private gsapCtx: any = null;
 
   constructor(
     private api: ApiService,
@@ -515,6 +1053,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.api.getProductsPaginated(0, 6).subscribe({
       next: (res) => {
         this.featuredProducts = res.data.content;
+        this.startFeaturedCarousel();
       },
       error: () => this.snackBar.open('Failed to load products', 'Close', { duration: 3000 }),
     });
@@ -531,6 +1070,132 @@ export class HomeComponent implements OnInit, OnDestroy {
       error: () => {
         this.sliderLoaded = true;
       }
+    });
+  }
+
+  private startFeaturedCarousel(): void {
+    this.featuredInterval = setInterval(() => {
+      this.featuredIndex = (this.featuredIndex + 1) % this.featuredProducts.length;
+    }, 3000);
+  }
+
+  setFeaturedIndex(index: number): void {
+    this.featuredIndex = index;
+    clearInterval(this.featuredInterval);
+    this.startFeaturedCarousel();
+  }
+
+  ngAfterViewInit(): void {
+    // Start all videos immediately — do NOT wait for GSAP
+    const videoIds = ['reveal-video', 'tv-screen-video'];
+    for (const id of videoIds) {
+      const v = document.getElementById(id) as HTMLVideoElement;
+      if (v) {
+        v.muted = true;
+        v.play().catch(() => {});
+      }
+    }
+    this.setupVideoReveal();
+    this.setupScrollScale();
+  }
+
+  private onScroll: (() => void) | null = null;
+
+  private setupScrollScale(): void {
+    const getScaleFactor = (el: HTMLElement): number => {
+      const rect = el.getBoundingClientRect();
+      const center = window.innerHeight / 2;
+      const elCenter = rect.top + rect.height / 2;
+      const distance = Math.abs(center - elCenter);
+      const maxDistance = window.innerHeight;
+      return Math.max(0.75, 1 - (distance / maxDistance) * 0.4);
+    };
+
+    this.onScroll = () => {
+      const tvImg = document.querySelector('.tv-wrapper') as HTMLElement;
+      const hpWrapper = document.querySelector('.headphones-wrapper') as HTMLElement;
+      if (tvImg) tvImg.style.transform = `scale(${getScaleFactor(tvImg)})`;
+      if (hpWrapper) hpWrapper.style.transform = `scale(${getScaleFactor(hpWrapper)})`;
+    };
+
+    window.addEventListener('scroll', this.onScroll, { passive: true });
+    this.onScroll();
+  }
+
+  private setupVideoReveal(): void {
+    if (typeof window === 'undefined') return;
+    import('gsap').then(({ default: gsap }) => {
+      import('gsap/ScrollTrigger').then(({ ScrollTrigger }) => {
+        gsap.registerPlugin(ScrollTrigger);
+
+        const video = document.getElementById('reveal-video') as HTMLVideoElement;
+        const videoReveal = document.getElementById('video-reveal');
+        const els = {
+          t1: document.getElementById('title1'),
+          d1: document.getElementById('desc1'),
+          g1: document.getElementById('group1'),
+          t2: document.getElementById('title2'),
+          d2: document.getElementById('desc2'),
+          g2: document.getElementById('group2'),
+          t3: document.getElementById('title3'),
+          d3: document.getElementById('desc3'),
+          g3: document.getElementById('group3'),
+          bg: document.getElementById('text-bg'),
+        };
+        if (!video || !videoReveal || Object.values(els).some((e) => !e)) return;
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: videoReveal,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 1,
+            invalidateOnRefresh: true,
+          },
+          defaults: { ease: 'none' },
+        });
+
+        // Text background overlay — gradually reveals theme color behind text
+        tl.fromTo(els.bg, { opacity: 0 }, { opacity: 0.08, duration: 0.30 }, 0);
+        tl.to(els.bg, { opacity: 0.16, duration: 0.20 }, 0.30);
+        tl.to(els.bg, { opacity: 0.24, duration: 0.30 }, 0.50);
+        tl.to(els.bg, { opacity: 0.35, duration: 0.20 }, 0.80);
+
+        // STEP 1: Title 1 fades in (center)
+        tl.fromTo(els.t1, { opacity: 0 }, { opacity: 1, duration: 0.10 }, 0);
+
+        // STEP 2: Paragraph 1 fades in below Title 1
+        tl.fromTo(els.d1, { opacity: 0 }, { opacity: 1, duration: 0.10 }, 0.10);
+
+        // STEP 3: Title 1 + Paragraph 1 slide UP together and disappear
+        tl.to(els.g1, { y: -60, opacity: 0, duration: 0.10 }, 0.20);
+
+        // STEP 4: Title 2 slides in from BOTTOM
+        tl.fromTo(els.t2, { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.10 }, 0.30);
+
+        // STEP 5: Paragraph 2 fades in below Title 2
+        tl.fromTo(els.d2, { opacity: 0 }, { opacity: 1, duration: 0.10 }, 0.40);
+
+        // STEP 6: Title 2 + Paragraph 2 slide UP together and disappear
+        tl.to(els.g2, { y: -60, opacity: 0, duration: 0.10 }, 0.50);
+
+        // STEP 7: Title 3 slides in from BOTTOM
+        tl.fromTo(els.t3, { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.10 }, 0.60);
+
+        // STEP 8: Paragraph 3 fades in below Title 3
+        tl.fromTo(els.d3, { opacity: 0 }, { opacity: 1, duration: 0.10 }, 0.70);
+
+        // STEP 9: Title 3 + Paragraph 3 slide UP together and disappear
+        tl.to(els.g3, { y: -60, opacity: 0, duration: 0.10 }, 0.80);
+
+        // STEP 10: section fades out
+        tl.to(videoReveal, { opacity: 0, duration: 0.10 }, 0.90);
+
+        this.gsapCtx = () => {
+          ScrollTrigger.getAll().forEach((st: any) => st.kill());
+          tl.kill();
+        };
+      });
     });
   }
 
@@ -590,7 +1255,10 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     clearInterval(this.autoSlideTimer);
+    if (this.onScroll) window.removeEventListener('scroll', this.onScroll);
     this.pauseAllVideos();
+    if (this.gsapCtx) this.gsapCtx();
+    clearInterval(this.featuredInterval);
   }
 
   goToProducts(): void {

@@ -394,7 +394,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.api.getParentCategories().subscribe({
+    this.api.getCategories().subscribe({
       next: (cats) => {
         const categories = cats.data;
         this.api.getProducts().subscribe({

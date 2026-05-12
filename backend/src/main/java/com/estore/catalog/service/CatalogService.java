@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 public class CatalogService {
@@ -44,7 +46,9 @@ public class CatalogService {
     }
 
     public List<ProductDto> getLatestProducts(int limit) {
-        return productRepository.findAll(PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdAt"))).getContent().stream()
+        return Stream.of(7L, 1L, 2L)
+                .map(id -> productRepository.findById(id).orElse(null))
+                .filter(Objects::nonNull)
                 .map(this::mapToDto)
                 .toList();
     }
