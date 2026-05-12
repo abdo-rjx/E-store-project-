@@ -8,6 +8,7 @@ import com.estore.catalog.entity.Product;
 import com.estore.catalog.repository.CategoryRepository;
 import com.estore.catalog.repository.ProductRepository;
 import com.estore.shared.exception.ResourceNotFoundException;
+import com.estore.shared.model.PageResponse;
 import com.estore.shopping.repository.CartItemRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -195,6 +197,22 @@ public class CatalogService {
         cartItemRepository.deleteByProductId(id);
         orderItemRepository.deleteByProductId(id);
         productRepository.deleteById(id);
+    }
+
+    public PageResponse<ProductDto> getRandomProducts(int page, int size) {
+        List<Product> all = productRepository.findAll();
+        Collections.shuffle(all);
+        long total = all.size();
+        int start = page * size;
+        if (start >= total) {
+            return new PageResponse<>(List.of(), page, size, total, (int) Math.ceil((double) total / size), true);
+        }
+        int end = Math.min(start + size, all.size());
+        List<ProductDto> content = all.subList(start, end).stream()
+                .map(this::mapToDto)
+                .toList();
+        int totalPages = (int) Math.ceil((double) total / size);
+        return new PageResponse<>(content, page, size, total, totalPages, end >= total);
     }
 
     private ProductDto mapToDto(Product product) {
