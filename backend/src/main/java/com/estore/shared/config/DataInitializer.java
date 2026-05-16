@@ -232,17 +232,13 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private Product createProduct(String name, Double price, String desc, String imageUrl, Category category, Integer stock) {
-        if (productRepository.findByName(name).isPresent()) {
-            return productRepository.findByName(name).get();
-        }
-        Product product = Product.builder()
-                .name(name)
-                .price(price)
-                .description(desc)
-                .imageUrl(imageUrl)
-                .category(category)
-                .stock(stock)
-                .build();
+        Product product = productRepository.findByName(name).orElse(new Product());
+        product.setName(name);
+        product.setPrice(price);
+        product.setDescription(desc);
+        product.setImageUrl(imageUrl);
+        product.setCategory(category);
+        product.setStock(stock);
         return productRepository.save(product);
     }
 }

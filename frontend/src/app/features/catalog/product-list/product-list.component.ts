@@ -1,476 +1,425 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ProductCardComponent } from '../../../shared/components/product-card/product-card.component';
 import { ApiService } from '../../../core/services/api.service';
-import { Product, Category } from '../../../core/models';
-import { forkJoin } from 'rxjs';
-
-interface CategoryHub {
-  category: Category;
-  featured: Product | null;
-  rest: Product[];
-  loading: boolean;
-}
+import { Product } from '../../../core/models';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, ProductCardComponent, MatSnackBarModule],
+  imports: [CommonModule, ProductCardComponent],
   template: `
     @if (loading) {
       <div class="shop-loading">
         <div class="spinner"></div>
-        <span>Loading…</span>
+        <span>Loading products...</span>
       </div>
     } @else if (error) {
       <div class="shop-error">
-        <span class="error-mark">!</span>
+        <span class="error-icon">!</span>
         <h2>Couldn't load products</h2>
-        <button class="retry-btn" (click)="load()">Try Again</button>
+        <p>Something went wrong. Please try again.</p>
+        <button class="retry-btn" (click)="loadProducts()">Try Again</button>
       </div>
     } @else {
-
-      <!-- ── HERO ── -->
+      <!-- Hero -->
       <section class="shop-hero">
-        <div class="shop-hero-inner">
-          <div class="shop-eyebrow">
-            <span class="eyebrow-rule"></span>
-            <span>Estoré — Browse by Category</span>
-          </div>
-          <h1 class="shop-title">Shop All<br>Electronics</h1>
+        <div class="shop-hero-bg"></div>
+        <div class="shop-hero-content">
+          <h1 class="shop-hero-title">Shop All Products</h1>
+          <p class="shop-hero-sub">Discover our curated collection of electronics, gadgets, and more</p>
         </div>
-        <span class="shop-watermark" aria-hidden="true">SHOP</span>
       </section>
 
-      <!-- ── CATEGORY HUBS ── -->
-      @for (hub of hubs; track hub.category.id) {
-        <section class="cat-section">
-
-          <!-- section header -->
-          <div class="cat-header">
-            <div class="cat-header-left">
-              <span class="cat-eyebrow">Category</span>
-              <h2 class="cat-name">{{ hub.category.name }}</h2>
-            </div>
-            <a class="see-all-link"
-               [routerLink]="['/categories', hub.category.name]">
-              See All <span class="arrow">→</span>
-            </a>
+      <div class="shop-container">
+        <!-- Toolbar -->
+        <div class="shop-toolbar">
+          <span class="shop-count">{{ totalElements }} product{{ totalElements !== 1 ? 's' : '' }}</span>
+          <div class="shop-sort">
+            <label for="sort-select">Sort by</label>
+            <select id="sort-select" class="sort-select" [value]="sortBy" (change)="onSortChange($event)">
+              <option value="random">Random</option>
+              <option value="price">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name">Name: A to Z</option>
+              <option value="createdAt">Newest First</option>
+            </select>
           </div>
+        </div>
 
-          <!-- product row -->
-          @if (hub.loading) {
-            <div class="cat-skeleton">
-              <div class="skeleton-featured"></div>
-              @for (n of [1,2,3,4]; track n) {
-                <div class="skeleton-card"></div>
-              }
-            </div>
-          } @else if ((hub.featured || hub.rest.length) === null) {
-            <p class="cat-empty">No products yet in this category.</p>
-          } @else {
-            <div class="cat-row">
+        <!-- Grid -->
+        @if (products.length > 0) {
+          <div class="shop-grid">
+            @for (product of products; track product.id) {
+              <app-product-card [product]="product"></app-product-card>
+            }
+          </div>
+        } @else {
+          <div class="shop-empty">
+            <p>No products match your criteria.</p>
+          </div>
+        }
 
-              <!-- Featured slot -->
-              @if (hub.featured) {
-                <div class="featured-slot" (click)="goToProduct(hub.featured.id)">
-                  <div class="featured-img-wrap">
-                    <img [src]="hub.featured.imageUrl || hub.featured.imagePaths?.[0]"
-                         [alt]="hub.featured.name"
-                         class="featured-img"
-                         onerror="this.src='https://placehold.co/480x360/1C1C1C/C8102E?text=E'">
-                    @if (hub.featured.featured) {
-                      <span class="featured-badge">★ Featured</span>
-                    }
-                  </div>
-                  <div class="featured-info">
-                    <p class="featured-cat">{{ hub.featured.categoryName }}</p>
-                    <h3 class="featured-name">{{ hub.featured.name }}</h3>
-                    <p class="featured-price">\${{ hub.featured.price | number:'1.2-2' }}</p>
-                    <button class="featured-cta" (click)="$event.stopPropagation(); goToProduct(hub.featured.id)">
-                      View Product
-                    </button>
-                  </div>
-                </div>
-              }
-
-              <!-- Scrollable regular cards -->
-              <div class="cards-scroll">
-                @for (p of hub.rest; track p.id) {
-                  <div class="scroll-card-wrap">
-                    <app-product-card [product]="p"></app-product-card>
-                  </div>
-                }
-                <!-- See-all end card -->
-                <a class="see-all-card" [routerLink]="['/categories', hub.category.name]">
-                  <span class="see-all-card-icon">→</span>
-                  <span class="see-all-card-text">See All<br>{{ hub.category.name }}</span>
-                </a>
-              </div>
-
-            </div>
-          }
-
-        </section>
-      }
-
+        <!-- Pagination -->
+        @if (totalPages > 1) {
+          <div class="shop-pagination">
+            <button class="page-btn" [class.disabled]="page === 0" (click)="prevPage()" [disabled]="page === 0">
+              Prev
+            </button>
+            @for (p of pageNumbers; track p) {
+              <button class="page-btn" [class.active]="p === page" (click)="goToPage(p)">
+                {{ p + 1 }}
+              </button>
+            }
+            <button class="page-btn" [class.disabled]="last" (click)="nextPage()" [disabled]="last">
+              Next
+            </button>
+          </div>
+        }
+      </div>
     }
   `,
   styles: [`
-    /* ── Loading / error ── */
     .shop-loading {
-      display: flex; flex-direction: column; align-items: center;
-      justify-content: center; gap: 16px;
-      min-height: 60vh;
-      font-family: 'Outfit', sans-serif;
-      color: var(--text-tertiary);
-    }
-    .spinner {
-      width: 36px; height: 36px;
-      border: 3px solid var(--border);
-      border-top-color: var(--accent);
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .shop-error {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 12px; padding: 80px 20px; text-align: center;
-      font-family: 'Outfit', sans-serif;
-    }
-    .error-mark { font-size: 40px; color: var(--accent); }
-    .retry-btn {
-      margin-top: 8px;
-      padding: 10px 24px;
-      background: var(--accent); color: #fff;
-      border: none; cursor: pointer;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 13px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em;
-    }
-
-    /* ── Hero ── */
-    .shop-hero {
-      position: relative;
-      overflow: hidden;
-      padding: 72px var(--page-gutter, 48px) 56px;
-      border-bottom: 1px solid var(--border);
-    }
-    .shop-hero-inner { position: relative; z-index: 1; }
-    .shop-eyebrow {
-      display: flex; align-items: center; gap: 12px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 11px; letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-tertiary);
-      margin-bottom: 16px;
-    }
-    .eyebrow-rule {
-      display: block; width: 32px; height: 1px;
-      background: var(--accent);
-    }
-    .shop-title {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(3.5rem, 8vw, 7rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      line-height: 0.92;
-      color: var(--text-primary);
-    }
-    .shop-watermark {
-      position: absolute;
-      right: -0.05em; bottom: -0.2em;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(8rem, 20vw, 16rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      color: transparent;
-      -webkit-text-stroke: 1px var(--border);
-      line-height: 1;
-      pointer-events: none;
-      user-select: none;
-      z-index: 0;
-    }
-
-    /* ── Category section ── */
-    .cat-section {
-      padding: 56px var(--page-gutter, 48px) 0;
-      border-bottom: 1px solid var(--border);
-      padding-bottom: 56px;
-    }
-    .cat-header {
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      margin-bottom: 28px;
-    }
-    .cat-header-left { display: flex; flex-direction: column; gap: 2px; }
-    .cat-eyebrow {
-      font-family: 'Outfit', sans-serif;
-      font-size: 10px; letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-    .cat-name {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: clamp(1.8rem, 3vw, 2.6rem);
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: var(--text-primary);
-      line-height: 1;
-    }
-    .see-all-link {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 13px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      color: var(--text-tertiary);
-      text-decoration: none;
-      display: flex; align-items: center; gap: 6px;
-      transition: color 0.15s;
-      padding-bottom: 2px;
-      border-bottom: 1px solid transparent;
-    }
-    .see-all-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
-    .arrow { transition: transform 0.15s; }
-    .see-all-link:hover .arrow { transform: translateX(3px); }
-
-    /* ── Product row ── */
-    .cat-row {
-      display: flex;
-      gap: 1px;
-      background: var(--border);
-      overflow: hidden;
-    }
-
-    /* ── Featured slot ── */
-    .featured-slot {
-      flex-shrink: 0;
-      width: 320px;
-      display: flex;
-      flex-direction: column;
-      background: var(--bg-1);
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .featured-slot:hover { background: var(--bg-2); }
-    .featured-img-wrap {
-      position: relative;
-      aspect-ratio: 4/3;
-      overflow: hidden;
-      background: var(--bg-2);
-    }
-    .featured-img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform 0.4s ease;
-    }
-    .featured-slot:hover .featured-img { transform: scale(1.04); }
-    .featured-badge {
-      position: absolute;
-      top: 12px; left: 12px;
-      padding: 4px 10px;
-      background: var(--accent);
-      color: #fff;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 11px; font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-    }
-    .featured-info {
-      padding: 20px;
-      display: flex; flex-direction: column; gap: 6px;
-      flex: 1;
-    }
-    .featured-cat {
-      font-family: 'Outfit', sans-serif;
-      font-size: 10px; letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--text-tertiary);
-    }
-    .featured-name {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 1.25rem; font-weight: 700;
-      text-transform: uppercase;
-      color: var(--text-primary);
-      line-height: 1.1;
-    }
-    .featured-price {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 1.4rem; font-weight: 800;
-      color: var(--accent);
-    }
-    .featured-cta {
-      margin-top: auto;
-      padding: 10px 0;
-      background: var(--accent); color: #fff;
-      border: none; cursor: pointer;
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 12px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.1em;
-      transition: background 0.15s;
-    }
-    .featured-cta:hover { background: var(--accent-hover, #a00c24); }
-
-    /* ── Scrollable cards ── */
-    .cards-scroll {
-      display: flex;
-      gap: 1px;
-      overflow-x: auto;
-      flex: 1;
-      background: var(--border);
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-    }
-    .cards-scroll::-webkit-scrollbar { height: 4px; }
-    .cards-scroll::-webkit-scrollbar-track { background: transparent; }
-    .cards-scroll::-webkit-scrollbar-thumb { background: var(--border); }
-    .scroll-card-wrap {
-      flex-shrink: 0;
-      width: 220px;
-      background: var(--bg-1);
-    }
-    .scroll-card-wrap ::ng-deep app-product-card {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    /* ── See-all end card ── */
-    .see-all-card {
-      flex-shrink: 0;
-      width: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      background: var(--bg-1);
-      text-decoration: none;
-      transition: background 0.15s;
+      gap: 16px;
+      padding: 120px 0;
+      color: var(--text-tertiary);
+      font-size: 14px;
     }
-    .see-all-card:hover { background: var(--bg-2); }
-    .see-all-card-icon {
-      font-size: 2rem;
-      color: var(--accent);
-      line-height: 1;
-      transition: transform 0.15s;
+    .spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-primary);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
-    .see-all-card:hover .see-all-card-icon { transform: translateX(4px); }
-    .see-all-card-text {
-      font-family: 'Barlow Condensed', sans-serif;
-      font-size: 12px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.08em;
-      text-align: center; line-height: 1.3;
-      color: var(--text-secondary);
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .shop-error {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 120px 0;
+      text-align: center;
+    }
+    .error-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .shop-error h2 {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 20px;
+      color: var(--text-primary);
+      margin: 0;
+    }
+    .shop-error p {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      margin: 0;
+    }
+    .retry-btn {
+      margin-top: 8px;
+      padding: 10px 28px;
+      border: 2px solid var(--accent-primary);
+      border-radius: var(--radius-pill);
+      background: var(--accent-primary);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .retry-btn:hover {
+      opacity: 0.85;
     }
 
-    /* ── Skeletons ── */
-    .cat-skeleton {
-      display: flex; gap: 1px;
-      background: var(--border);
+    /* Hero */
+    .shop-hero {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       overflow: hidden;
     }
-    .skeleton-featured {
-      flex-shrink: 0; width: 320px; height: 300px;
-      background: var(--bg-2);
-      animation: pulse 1.5s ease-in-out infinite;
+    .shop-hero-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 50%, var(--bg-secondary) 100%);
+      opacity: 0.6;
     }
-    .skeleton-card {
-      flex-shrink: 0; width: 220px; height: 300px;
-      background: var(--bg-2);
-      animation: pulse 1.5s ease-in-out infinite;
+    .shop-hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 30% 50%, var(--accent-primary) 0%, transparent 60%);
+      opacity: 0.08;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+    .shop-hero-content {
+      position: relative;
+      text-align: center;
+      z-index: 1;
     }
-    .cat-empty {
-      font-family: 'Outfit', sans-serif;
-      font-size: 14px; color: var(--text-tertiary);
-      padding: 32px 0;
+    .shop-hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      margin: 0;
+      line-height: 1.1;
+    }
+    .shop-hero-sub {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      color: var(--text-tertiary);
+      margin: 16px 0 0;
+      letter-spacing: 0.02em;
     }
 
-    /* ── Responsive ── */
-    @media (max-width: 768px) {
-      .shop-hero { padding: 48px 20px 40px; }
-      .cat-section { padding: 40px 20px; }
-      .featured-slot { width: 260px; }
-      .scroll-card-wrap { width: 180px; }
+    /* Container */
+    .shop-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px 64px;
     }
-    @media (max-width: 480px) {
-      .cat-row { flex-direction: column; background: none; }
-      .featured-slot { width: 100%; }
-      .cards-scroll { width: 100%; }
+
+    /* Toolbar */
+    .shop-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--border-primary);
+      margin-bottom: 32px;
+    }
+    .shop-count {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+    .shop-sort {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .shop-sort label {
+      font-size: 13px;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+    .sort-select {
+      padding: 8px 32px 8px 14px;
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-pill);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      transition: border-color 0.2s;
+    }
+    .sort-select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+    }
+
+    /* Grid */
+    .shop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    /* Empty */
+    .shop-empty {
+      text-align: center;
+      padding: 80px 0;
+      color: var(--text-tertiary);
+      font-size: 15px;
+    }
+
+    /* Pagination */
+    .shop-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 48px 0 0;
+    }
+    .page-btn {
+      min-width: 40px;
+      height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-pill);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .page-btn:hover:not(.active):not(.disabled) {
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+    }
+    .page-btn.active {
+      background: var(--accent-primary);
+      border-color: var(--accent-primary);
+      color: #fff;
+    }
+    .page-btn.disabled, .page-btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .shop-hero {
+        height: 240px;
+      }
+      .shop-toolbar {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .shop-grid {
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+      }
+      .shop-container {
+        padding: 0 16px 48px;
+      }
+      .shop-pagination {
+        flex-wrap: wrap;
+      }
     }
   `]
 })
 export class ProductListComponent implements OnInit {
-  hubs: CategoryHub[] = [];
   loading = true;
   error = false;
+  products: Product[] = [];
+  page = 0;
+  pageSize = 12;
+  totalElements = 0;
+  totalPages = 0;
+  last = false;
+  sortBy = 'random';
 
   constructor(
     private api: ApiService,
-    private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
-    this.load();
+    this.loadProducts();
   }
 
-  load(): void {
+  get pageNumbers(): number[] {
+    const pages: number[] = [];
+    const start = Math.max(0, this.page - 2);
+    const end = Math.min(this.totalPages - 1, this.page + 2);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
+  loadProducts(): void {
     this.loading = true;
     this.error = false;
 
-    this.api.getCategories().subscribe({
-      next: res => {
-        const categories = (res.data || []).filter(c => c.parentId == null);
-        this.hubs = categories.map(cat => ({
-          category: cat,
-          featured: null,
-          rest: [],
-          loading: true
-        }));
-        this.loading = false;
-        this.loadCategoryProducts();
-      },
-      error: () => {
-        this.loading = false;
-        this.error = true;
-      }
-    });
-  }
-
-  private loadCategoryProducts(): void {
-    for (const hub of this.hubs) {
-      this.api.getProductsByCategory(hub.category.id, 7).subscribe({
-        next: res => {
-          const products = res.data?.content || [];
-          if (products.length === 0) {
-            hub.featured = null;
-            hub.rest = [];
-          } else {
-            const featuredIdx = products.findIndex(p => p.featured);
-            if (featuredIdx >= 0) {
-              hub.featured = products[featuredIdx];
-              hub.rest = products.filter((_, i) => i !== featuredIdx);
-            } else {
-              hub.featured = products[0];
-              hub.rest = products.slice(1);
-            }
-          }
-          hub.loading = false;
+    if (this.sortBy === 'random') {
+      this.api.getRandomProducts(this.page, this.pageSize).subscribe({
+        next: (res) => {
+          this.products = res.data.content;
+          this.page = res.data.page;
+          this.totalElements = res.data.totalElements;
+          this.totalPages = res.data.totalPages;
+          this.last = res.data.last;
+          this.loading = false;
         },
         error: () => {
-          hub.loading = false;
+          this.loading = false;
+          this.error = true;
+        }
+      });
+    } else {
+      const [sortBy, sortDir] = this.sortBy === 'price-desc'
+        ? ['price', 'desc']
+        : this.sortBy === 'price'
+          ? ['price', 'asc']
+          : [this.sortBy, 'desc'];
+
+      this.api.getProductsPaginated(this.page, this.pageSize, undefined, undefined, undefined, sortBy, sortDir).subscribe({
+        next: (res) => {
+          this.products = res.data.content;
+          this.page = res.data.page;
+          this.totalElements = res.data.totalElements;
+          this.totalPages = res.data.totalPages;
+          this.last = res.data.last;
+          this.loading = false;
+        },
+        error: () => {
+          this.loading = false;
+          this.error = true;
         }
       });
     }
+  }
+
+  onSortChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    if (value === this.sortBy) return;
+    this.sortBy = value;
+    this.page = 0;
+    this.loadProducts();
+  }
+
+  goToPage(p: number): void {
+    if (p < 0 || p >= this.totalPages) return;
+    this.page = p;
+    this.loadProducts();
+  }
+
+  prevPage(): void {
+    this.goToPage(this.page - 1);
+  }
+
+  nextPage(): void {
+    this.goToPage(this.page + 1);
   }
 
   goToProduct(id: number): void {
