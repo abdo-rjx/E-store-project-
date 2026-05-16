@@ -68,6 +68,7 @@ public class ProductController {
             case "price" -> "price";
             case "name" -> "name";
             case "createdAt" -> "createdAt";
+            case "featured" -> "featured";
             default -> "id";
         };
         Sort.Direction dir = "asc".equalsIgnoreCase(sortDirection)

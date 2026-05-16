@@ -142,6 +142,12 @@ import { Product, Review } from '../../../core/models';
               </button>
             </div>
           </div>
+        } @else {
+          <div class="review-login-prompt">
+            <span class="material-icons">rate_review</span>
+            <p>Sign in to write a review</p>
+            <a routerLink="/login" class="btn-login-review">Sign In</a>
+          </div>
         }
 
         @if (reviews.length === 0) {
@@ -576,6 +582,53 @@ import { Product, Review } from '../../../core/models';
     }
 
     .btn-submit:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--accent-primary-glow);
+    }
+
+    /* Review login prompt */
+    .review-login-prompt {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 32px;
+      margin-bottom: 36px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border-secondary);
+      border-radius: var(--radius-lg);
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    .review-login-prompt .material-icons {
+      font-size: 36px;
+      color: var(--accent-primary);
+      opacity: 0.7;
+    }
+
+    .review-login-prompt p {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .btn-login-review {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 28px;
+      border-radius: var(--radius-pill);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      background: var(--accent-gradient);
+      color: #fff;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 12px var(--accent-primary-glow);
+    }
+
+    .btn-login-review:hover {
       transform: translateY(-1px);
       box-shadow: 0 4px 20px var(--accent-primary-glow);
     }

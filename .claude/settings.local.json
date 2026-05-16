@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\hp\\\\Desktop\\\\E-store-project\\\\frontend\\\\src\" -Recurse | Where-Object { $_.PSIsContainer } | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(npx tsc *)",
+      "Bash(mvn compile *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/api/admin/products/page?page=0^)",
+      "Bash(size=1 2>&1)",
+      "Bash(curl -s http://localhost:8080/actuator/health)",
+      "Bash(curl -s http://localhost:8080/api/products?page=0)",
+      "Bash(curl *)",
+      "Bash(break)",
+      "Bash(mvn spring-boot:run)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //PID 18524 //F)",
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm install *)",
+      "Bash(npx ng *)",
+      "Bash(node scripts/download-assets.js)",
+      "Bash(node scripts/seed-products.js)",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); console.log\\(j.data.length, 'total products'\\); const names=j.data.map\\(p=>p.name+' [id:'+p.id+', cat:'+p.categoryName+']'\\); names.forEach\\(n=>console.log\\(n\\)\\);\")",
+      "Bash(node -e \"process.stdin.resume\\(\\);let d='';process.stdin.on\\('data',c=>d+=c\\);process.stdin.on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\);console.log\\(JSON.stringify\\(j.data?.slice?.\\(0,5\\)||j.data,null,2\\)\\);}\\)\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const p=JSON.parse\\(d\\); p.products.slice\\(0,3\\).forEach\\(x=>console.log\\(x.id, x.title, x.thumbnail\\)\\)\")"
+    ]
+  }
+}

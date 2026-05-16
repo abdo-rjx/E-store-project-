@@ -148,4 +148,34 @@ export class ApiService {
   getLatestProducts(): Observable<ApiResponse<Product[]>> {
     return this.http.get<ApiResponse<Product[]>>(`${this.baseUrl}/products/latest`);
   }
+
+  getAdminProducts(page: number, size: number, keyword?: string, categoryId?: number, stockFilter?: string, sortBy?: string, sortDir?: string): Observable<ApiResponse<PageResponse<Product>>> {
+    let url = `${this.baseUrl}/admin/products/page?page=${page}&size=${size}`;
+    if (keyword)     url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (categoryId)  url += `&categoryId=${categoryId}`;
+    if (stockFilter) url += `&stockFilter=${stockFilter}`;
+    if (sortBy)      url += `&sortBy=${sortBy}`;
+    if (sortDir)     url += `&sortDir=${sortDir}`;
+    return this.http.get<ApiResponse<PageResponse<Product>>>(url);
+  }
+
+  exportProductsCsv(): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/admin/products/export`, { responseType: 'blob' });
+  }
+
+  importProductsCsv(file: File): Observable<ApiResponse<any>> {
+    const fd = new FormData();
+    fd.append('file', file);
+    return this.http.post<ApiResponse<any>>(`${this.baseUrl}/admin/products/import`, fd);
+  }
+
+  toggleFeatured(id: number): Observable<ApiResponse<Product>> {
+    return this.http.patch<ApiResponse<Product>>(`${this.baseUrl}/admin/products/${id}/featured`, {});
+  }
+
+  getProductsByCategory(categoryId: number, size: number = 7): Observable<ApiResponse<PageResponse<Product>>> {
+    return this.http.get<ApiResponse<PageResponse<Product>>>(
+      `${this.baseUrl}/products/page?page=0&size=${size}&categoryId=${categoryId}&sortBy=featured&sortDirection=desc`
+    );
+  }
 }

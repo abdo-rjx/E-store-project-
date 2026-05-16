@@ -121,6 +121,28 @@ public class CatalogService {
         return products.map(this::mapToDto);
     }
 
+    /**
+     * Admin-only paginated search with optional stockFilter:
+     * "all" | "inStock" (stock>0) | "lowStock" (1-5) | "outOfStock" (stock=0)
+     */
+    public Page<ProductDto> searchProductsAdmin(String keyword, Long categoryId, String stockFilter, Pageable pageable) {
+        Integer stockMin = null;
+        Integer stockMax = null;
+        if ("inStock".equals(stockFilter))    { stockMin = 1; }
+        else if ("lowStock".equals(stockFilter))  { stockMin = 1; stockMax = 5; }
+        else if ("outOfStock".equals(stockFilter)) { stockMin = 0; stockMax = 0; }
+
+        List<Long> catIds = resolveCategoryIds(categoryId);
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        Page<Product> products;
+        if (!catIds.isEmpty()) {
+            products = productRepository.findWithFiltersAndCategory(kw, catIds, stockMin, stockMax, pageable);
+        } else {
+            products = productRepository.findWithFilters(kw, stockMin, stockMax, pageable);
+        }
+        return products.map(this::mapToDto);
+    }
+
     public List<CategoryDto> getAllCategories() {
         return categoryRepository.findAll().stream()
                 .map(this::mapCategoryToDto)
@@ -227,7 +249,8 @@ public class CatalogService {
                 product.getStock(),
                 product.getVideoPath(),
                 product.getImagePaths(),
-                product.getCreatedAt() != null ? product.getCreatedAt().toString() : null
+                product.getCreatedAt() != null ? product.getCreatedAt().toString() : null,
+                product.isFeatured()
         );
     }
 }

@@ -17,11 +17,17 @@ public record ProductDto(
         Integer stock,
         String videoPath,
         List<String> imagePaths,
-        String createdAt
+        String createdAt,
+        Boolean featured
 ) {
-    // Constructor for backward compatibility (without new fields)
     public ProductDto(Long id, String name, Double price, String imageUrl, String description,
                       String categoryName, Long categoryId, Integer stock) {
-        this(id, name, price, imageUrl, description, categoryName, categoryId, stock, null, List.of(), null);
+        this(id, name, price, imageUrl, description, categoryName, categoryId, stock, null, List.of(), null, null);
+    }
+
+    public ProductDto(Long id, String name, Double price, String imageUrl, String description,
+                      String categoryName, Long categoryId, Integer stock,
+                      String videoPath, List<String> imagePaths, String createdAt) {
+        this(id, name, price, imageUrl, description, categoryName, categoryId, stock, videoPath, imagePaths, createdAt, null);
     }
 }

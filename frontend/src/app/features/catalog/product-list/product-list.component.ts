@@ -344,27 +344,7 @@ export class ProductListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.api.getCategories().subscribe({
-      next: (cats) => {
-        const categories = cats.data;
-        this.api.getProducts().subscribe({
-          next: (res) => {
-            const allProducts = res.data;
-            this.buildSections(categories, allProducts);
-            this.startCarousels();
-            this.loading = false;
-          },
-          error: () => {
-            this.loading = false;
-            this.snackBar.open('Failed to load products', 'Close', { duration: 3000 });
-          }
-        });
-      },
-      error: () => {
-        this.loading = false;
-        this.snackBar.open('Failed to load categories', 'Close', { duration: 3000 });
-      }
-    });
+    this.loadProducts();
   }
 
   get pageNumbers(): number[] {
