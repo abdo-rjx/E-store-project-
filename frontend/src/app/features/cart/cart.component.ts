@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../core/services/api.service';
 import { AuthService } from '../../core/services/auth.service';
+import { PromoService, ActivePromo } from '../../core/services/promo.service';
 import { Cart, CartItem } from '../../core/models';
 
 @Component({
@@ -78,11 +79,55 @@ import { Cart, CartItem } from '../../core/models';
               <span class="summary-muted">Calculated at next step</span>
             </div>
 
+            <!-- Promo Code -->
+            <div class="promo-section">
+              @if (!activePromo) {
+                <div class="promo-row">
+                  <div class="promo-input-wrap">
+                    <span class="material-icons promo-icon">confirmation_number</span>
+                    <input
+                      class="promo-input"
+                      type="text"
+                      placeholder="Promo code"
+                      [value]="promoInput"
+                      (input)="promoInput = $any($event.target).value"
+                      (keydown.enter)="applyPromo()"
+                      maxlength="20"
+                      aria-label="Promo code"
+                    >
+                  </div>
+                  <button class="btn-apply" (click)="applyPromo()">Apply</button>
+                </div>
+                @if (promoError) {
+                  <p class="promo-msg promo-msg--error">
+                    <span class="material-icons">error_outline</span>{{ promoError }}
+                  </p>
+                }
+              } @else {
+                <div class="promo-applied">
+                  <span class="material-icons">check_circle</span>
+                  <span class="promo-applied-text">
+                    <strong>{{ activePromo.code }}</strong> — {{ activePromo.discount }}% off
+                  </span>
+                  <button class="promo-remove" (click)="removePromo()" aria-label="Remove promo">
+                    <span class="material-icons">close</span>
+                  </button>
+                </div>
+              }
+            </div>
+
             <div class="summary-sep"></div>
+
+            @if (activePromo) {
+              <div class="summary-line summary-discount">
+                <span>Discount ({{ activePromo.discount }}%)</span>
+                <span class="discount-amount">−\${{ discountAmount | number:'1.2-2' }}</span>
+              </div>
+            }
 
             <div class="summary-line summary-total">
               <span>TOTAL</span>
-              <span class="summary-amount">\${{ cart.total | number:'1.2-2' }}</span>
+              <span class="summary-amount">\${{ finalTotal | number:'1.2-2' }}</span>
             </div>
 
             <button class="btn-checkout"
@@ -411,6 +456,135 @@ import { Cart, CartItem } from '../../core/models';
 
     .secure-note .material-icons { font-size: 14px; color: var(--success); }
 
+    /* ── Promo Section ── */
+    .promo-section {
+      padding: 14px 0 2px;
+      border-top: 1px dashed var(--border-primary);
+      margin-top: 8px;
+    }
+
+    .promo-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .promo-input-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .promo-icon {
+      position: absolute;
+      left: 10px;
+      font-size: 16px;
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+
+    .promo-input {
+      width: 100%;
+      padding: 10px 12px 10px 34px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .promo-input::placeholder { text-transform: none; letter-spacing: normal; color: var(--text-tertiary); }
+    .promo-input:focus { border-color: var(--accent-primary); }
+
+    .btn-apply {
+      padding: 10px 16px;
+      background: var(--accent-primary-glow);
+      border: 1px solid var(--accent-primary);
+      border-radius: var(--radius-md);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent-primary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+
+    .btn-apply:hover {
+      background: var(--accent-primary);
+      color: #fff;
+    }
+
+    .promo-msg {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+    }
+
+    .promo-msg .material-icons { font-size: 14px; }
+
+    .promo-msg--error { color: var(--danger); }
+
+    .promo-applied {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: var(--radius-md);
+    }
+
+    .promo-applied .material-icons { font-size: 16px; color: var(--success, #22c55e); flex-shrink: 0; }
+
+    .promo-applied-text {
+      flex: 1;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .promo-applied-text strong {
+      font-family: 'DM Mono', 'Courier New', monospace;
+      color: var(--success, #22c55e);
+      letter-spacing: 0.04em;
+    }
+
+    .promo-remove {
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-radius: 50%;
+      transition: all 0.2s;
+      padding: 0;
+    }
+
+    .promo-remove:hover { color: var(--danger); background: var(--danger-bg); }
+    .promo-remove .material-icons { font-size: 14px; }
+
+    .summary-discount {
+      color: var(--success, #22c55e);
+    }
+
+    .discount-amount {
+      font-weight: 700;
+      color: var(--success, #22c55e);
+    }
+
     .btn-spinner {
       width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
       border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite;
@@ -437,14 +611,30 @@ export class CartComponent implements OnInit {
   cart: Cart | null = null;
   loading = false;
 
+  promoInput = '';
+  promoError = '';
+  activePromo: ActivePromo | null = null;
+
+  get discountAmount(): number {
+    if (!this.cart || !this.activePromo) return 0;
+    return this.cart.total * (this.activePromo.discount / 100);
+  }
+
+  get finalTotal(): number {
+    if (!this.cart) return 0;
+    return this.cart.total - this.discountAmount;
+  }
+
   constructor(
     private api: ApiService,
     private auth: AuthService,
+    private promoService: PromoService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
+    this.activePromo = this.promoService.getActivePromo();
     this.loadCart();
   }
 
@@ -476,6 +666,26 @@ export class CartComponent implements OnInit {
         this.snackBar.open('Item removed', 'Close', { duration: 2000 });
       }
     });
+  }
+
+  applyPromo(): void {
+    this.promoError = '';
+    if (!this.promoInput.trim()) return;
+    const result = this.promoService.applyCode(this.promoInput);
+    if (result.valid) {
+      this.activePromo = this.promoService.getActivePromo();
+      this.promoInput = '';
+      this.snackBar.open(result.message, 'Close', { duration: 3000 });
+    } else {
+      this.promoError = result.message;
+    }
+  }
+
+  removePromo(): void {
+    this.promoService.removeActivePromo();
+    this.activePromo = null;
+    this.promoInput = '';
+    this.promoError = '';
   }
 
   checkout(): void {

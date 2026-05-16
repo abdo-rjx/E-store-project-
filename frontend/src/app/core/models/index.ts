@@ -10,6 +10,7 @@ export interface Product {
   videoPath?: string;
   imagePaths?: string[];
   createdAt?: string;
+  featured?: boolean;
 }
 
 export interface Category {

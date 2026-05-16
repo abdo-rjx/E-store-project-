@@ -5,6 +5,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ApiService } from '../../../core/services/api.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PromoService } from '../../../core/services/promo.service';
 
 @Component({
   selector: 'app-login',
@@ -324,6 +325,7 @@ export class LoginComponent {
     private fb: FormBuilder,
     private api: ApiService,
     private auth: AuthService,
+    private promo: PromoService,
     private router: Router,
     private snackBar: MatSnackBar
   ) {
@@ -340,7 +342,16 @@ export class LoginComponent {
     this.api.login(this.loginForm.value).subscribe({
       next: (res) => {
         this.auth.login(res.data);
-        this.snackBar.open('Welcome back!', 'Close', { duration: 3000 });
+        const code = this.promo.grantFirstSigninPromo();
+        if (code) {
+          this.snackBar.open(
+            `Welcome! Your promo code: ${code} — 15% off your first order`,
+            'Got it',
+            { duration: 8000, panelClass: 'promo-snack' }
+          );
+        } else {
+          this.snackBar.open('Welcome back!', 'Close', { duration: 3000 });
+        }
         this.router.navigate(['/products']);
       },
       error: (err) => {

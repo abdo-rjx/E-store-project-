@@ -4,18 +4,23 @@ import com.estore.admin.service.AdminService;
 import com.estore.catalog.dto.CategoryDto;
 import com.estore.catalog.dto.ProductDto;
 import com.estore.shared.model.ApiResponse;
+import com.estore.shared.model.PageResponse;
 import com.estore.shared.storage.FileStorageService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -29,6 +34,12 @@ public class AdminController {
     public AdminController(AdminService adminService, FileStorageService fileStorageService) {
         this.adminService = adminService;
         this.fileStorageService = fileStorageService;
+    }
+
+    @PatchMapping("/products/{id}/featured")
+    public ResponseEntity<ApiResponse<ProductDto>> toggleFeatured(@PathVariable Long id) {
+        ProductDto product = adminService.toggleFeatured(id);
+        return ResponseEntity.ok(ApiResponse.ok("Featured status toggled", product));
     }
 
     @PutMapping("/products/{id}")
@@ -160,5 +171,39 @@ public class AdminController {
             @RequestParam Integer quantity) {
         adminService.updateStock(productId, quantity);
         return ResponseEntity.ok(ApiResponse.ok("Stock updated", null));
+    }
+
+    @GetMapping("/products/page")
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProductsAdmin(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "all") String stockFilter,
+            @RequestParam(defaultValue = "id")  String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+        PageResponse<ProductDto> result = adminService.getProductsAdmin(keyword, categoryId, stockFilter, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(ApiResponse.ok("Products fetched", result));
+    }
+
+    @GetMapping("/products/export")
+    public ResponseEntity<byte[]> exportCsv() {
+        String csv = adminService.exportProductsCsv();
+        byte[] bytes = csv.getBytes(StandardCharsets.UTF_8);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("text/csv"));
+        headers.setContentDisposition(ContentDisposition.attachment().filename("inventory.csv").build());
+        headers.setContentLength(bytes.length);
+        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/products/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, Object>>> importCsv(
+            @RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.error("File is empty", null));
+        }
+        Map<String, Object> result = adminService.importProductsCsv(file);
+        return ResponseEntity.ok(ApiResponse.ok("Import complete", result));
     }
 }

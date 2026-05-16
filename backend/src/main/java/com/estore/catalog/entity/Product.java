@@ -46,6 +46,10 @@ public class Product {
     @Builder.Default
     private List<String> imagePaths = new ArrayList<>();
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean featured = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

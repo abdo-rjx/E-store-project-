@@ -7,30 +7,82 @@ import { RouterLink } from '@angular/router';
   imports: [RouterLink],
   template: `
     <footer class="footer">
-      <div class="footer-wave">
-        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
-          <path class="wave-path" d="M0,60 C360,120 720,0 1080,60 C1260,90 1380,70 1440,60 L1440,120 L0,120 Z"></path>
-        </svg>
-      </div>
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <a routerLink="/" class="footer-logo">
-            <span class="footer-icon">E</span>
-            <span class="footer-text">Estoré</span>
-          </a>
-          <p class="footer-tagline">Premium Electronics. Precision Engineering.</p>
+      <div class="footer-top-rule"></div>
+
+      <div class="footer-body">
+        <div class="footer-grid">
+
+          <!-- Brand column -->
+          <div class="footer-brand">
+            <a routerLink="/" class="footer-logo">
+              <div class="footer-mark">
+                <span class="footer-mark-e">E</span>
+              </div>
+              <span class="footer-logo-text">ESTORÉ</span>
+            </a>
+            <p class="footer-tagline">Premium Electronics.<br>Precision Engineered.</p>
+            <div class="footer-social">
+              <a class="social-btn" title="Twitter" aria-label="Twitter">
+                <span class="material-icons">alternate_email</span>
+              </a>
+              <a class="social-btn" title="Instagram" aria-label="Instagram">
+                <span class="material-icons">photo_camera</span>
+              </a>
+              <a class="social-btn" title="YouTube" aria-label="YouTube">
+                <span class="material-icons">play_circle</span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Shop links -->
+          <div class="footer-col">
+            <h5 class="footer-col-title">Shop</h5>
+            <nav class="footer-links">
+              <a routerLink="/products"   class="footer-link">All Products</a>
+              <a routerLink="/categories" class="footer-link">Categories</a>
+              <a routerLink="/products"   class="footer-link">New Arrivals</a>
+              <a routerLink="/products"   class="footer-link">Best Sellers</a>
+            </nav>
+          </div>
+
+          <!-- Account links -->
+          <div class="footer-col">
+            <h5 class="footer-col-title">Account</h5>
+            <nav class="footer-links">
+              <a routerLink="/login"    class="footer-link">Sign In</a>
+              <a routerLink="/register" class="footer-link">Create Account</a>
+              <a routerLink="/orders"   class="footer-link">My Orders</a>
+              <a routerLink="/profile"  class="footer-link">Profile</a>
+            </nav>
+          </div>
+
+          <!-- Support links -->
+          <div class="footer-col">
+            <h5 class="footer-col-title">Support</h5>
+            <nav class="footer-links">
+              <a class="footer-link">Help Center</a>
+              <a class="footer-link">Shipping Policy</a>
+              <a class="footer-link">Returns &amp; Refunds</a>
+              <a class="footer-link">Contact Us</a>
+            </nav>
+          </div>
+
         </div>
-        <nav class="footer-nav">
-          <a routerLink="/products">Shop</a>
-          <span class="footer-sep">·</span>
-          <a routerLink="/cart">Cart</a>
-          <span class="footer-sep">·</span>
-          <a routerLink="/orders">Orders</a>
-          <span class="footer-sep">·</span>
-          <a routerLink="/profile">Profile</a>
-        </nav>
-        <div class="footer-copy">
-          © 2026 Estoré. All rights reserved.
+
+        <!-- Bottom bar -->
+        <div class="footer-bottom">
+          <p class="footer-copy">© 2026 Estoré. All rights reserved.</p>
+          <div class="footer-badges">
+            <span class="footer-badge">
+              <span class="material-icons">verified_user</span>Secure Checkout
+            </span>
+            <span class="footer-badge">
+              <span class="material-icons">local_shipping</span>Free Shipping
+            </span>
+            <span class="footer-badge">
+              <span class="material-icons">replay</span>30-Day Returns
+            </span>
+          </div>
         </div>
       </div>
     </footer>
@@ -38,113 +90,206 @@ import { RouterLink } from '@angular/router';
   styles: [`
     .footer {
       position: relative;
-      border-top: 1px solid var(--border-primary);
-      background: var(--bg-secondary);
-      padding: 56px 24px 40px;
+      background: var(--bg-0);
       margin-top: auto;
-      overflow: hidden;
     }
 
-    .footer-wave {
-      position: absolute;
-      top: -1px;
-      left: 0;
-      right: 0;
-      width: 100%;
-      height: 60px;
-      overflow: hidden;
+    .footer-top-rule {
+      height: 1px;
+      background: var(--border);
     }
 
-    .footer-wave svg {
-      width: 100%;
-      height: 100%;
+    /* Red accent rule on hover/focus — small detail */
+    .footer-top-rule::after {
+      content: '';
+      display: block;
+      height: 1px;
+      width: 120px;
+      background: var(--accent);
+      opacity: 0.7;
     }
 
-    .wave-path {
-      fill: var(--bg-primary);
-      transition: fill 0.5s ease;
-    }
-
-    .footer-inner {
-      max-width: 1240px;
+    .footer-body {
+      max-width: 1440px;
       margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 24px;
+      padding: 64px clamp(24px, 5vw, 80px) 40px;
     }
 
+    /* ── Grid ── */
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      padding-bottom: 48px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ── Brand ── */
     .footer-brand {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 8px;
+      gap: 20px;
     }
 
     .footer-logo {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 10px;
       text-decoration: none;
       color: var(--text-primary);
+      width: fit-content;
     }
 
-    .footer-icon {
-      width: 30px;
-      height: 30px;
+    .footer-mark {
+      width: 30px; height: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--accent-gradient);
-      border-radius: 8px;
-      font-family: 'Playfair Display', serif;
-      font-weight: 700;
-      font-size: 15px;
-      color: #fff;
+      background: var(--accent);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
     }
 
-    .footer-text {
-      font-family: 'Playfair Display', serif;
+    .footer-mark::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent 60%);
+    }
+
+    .footer-mark-e {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-weight: 800;
+      font-size: 16px;
+      color: #fff;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-logo-text {
+      font-family: 'Barlow Condensed', sans-serif;
       font-weight: 700;
       font-size: 18px;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.12em;
     }
 
     .footer-tagline {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       font-size: 13px;
       color: var(--text-tertiary);
-      letter-spacing: 0.04em;
+      line-height: 1.8;
     }
 
-    .footer-nav {
+    .footer-social {
+      display: flex;
+      gap: 8px;
+    }
+
+    .social-btn {
+      width: 34px; height: 34px;
       display: flex;
       align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
       justify-content: center;
-    }
-
-    .footer-nav a {
-      color: var(--text-secondary);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .footer-nav a:hover { color: var(--accent-primary); }
-
-    .footer-sep {
+      border: 1px solid var(--border);
       color: var(--text-tertiary);
-      font-size: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+      text-decoration: none;
+    }
+
+    .social-btn:hover {
+      border-color: var(--accent-border);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .social-btn .material-icons { font-size: 15px; }
+
+    /* ── Columns ── */
+    .footer-col { display: flex; flex-direction: column; gap: 18px; }
+
+    .footer-col-title {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--text-tertiary);
+    }
+
+    .footer-links { display: flex; flex-direction: column; gap: 10px; }
+
+    .footer-link {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.18s;
+      cursor: pointer;
+      width: fit-content;
+      position: relative;
+    }
+
+    .footer-link::after {
+      content: '';
+      position: absolute;
+      bottom: -1px; left: 0; right: 100%;
+      height: 1px;
+      background: var(--accent);
+      transition: right 0.2s ease;
+    }
+
+    .footer-link:hover { color: var(--text-primary); }
+    .footer-link:hover::after { right: 0; }
+
+    /* ── Bottom ── */
+    .footer-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 28px;
+      flex-wrap: wrap;
+      gap: 16px;
     }
 
     .footer-copy {
-      font-family: 'DM Sans', sans-serif;
+      font-family: 'Outfit', sans-serif;
       font-size: 12px;
       color: var(--text-tertiary);
+    }
+
+    .footer-badges {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-tertiary);
+    }
+
+    .footer-badge .material-icons { font-size: 13px; color: var(--accent); }
+
+    /* ── Responsive ── */
+    @media (max-width: 900px) {
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+      .footer-brand { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 480px) {
+      .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+      .footer-badges { gap: 14px; }
     }
   `]
 })
